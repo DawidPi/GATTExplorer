@@ -21,6 +21,7 @@ class ItemSelectedAction implements AdapterView.OnItemClickListener {
 
         Log.i(TAG,"Device selected: " + bluetoothDevice.getName());
 
+        //never change autoconnect from false to true as it causes errors on some Android platforms!
         bluetoothDevice.connectGatt(mContext, false, mBLECallback);
     }
 
