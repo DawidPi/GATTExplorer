@@ -2,12 +2,8 @@ package com.projects.dawid.gattclient;
 
 import android.bluetooth.BluetoothDevice;
 
-/**
- * Created by Dawid on 03.11.2016.
- */
-
-public class BluetoothDeviceAdapter {
-    public BluetoothDeviceAdapter(BluetoothDevice device){
+class BluetoothDeviceAdapter {
+    BluetoothDeviceAdapter(BluetoothDevice device){
         mBluetoothDevice = device;
     }
 
@@ -16,12 +12,22 @@ public class BluetoothDeviceAdapter {
     }
 
     public boolean equals(Object object){
-        BluetoothDeviceAdapter compareDevice = (BluetoothDeviceAdapter) object;
-        return this.mBluetoothDevice.equals(compareDevice.mBluetoothDevice);
+        if(object.getClass() == BluetoothDeviceAdapter.class) {
+            BluetoothDeviceAdapter compareDevice = (BluetoothDeviceAdapter) object;
+            return this.mBluetoothDevice.equals(compareDevice.mBluetoothDevice);
+        }
+        else{
+            throw new IllegalArgumentException("BluetoothDeviceAdapter type can be compared only" +
+                    " with another BluetoothDeviceAdapter type");
+        }
     }
 
     public int hashCode(){
         return mBluetoothDevice.hashCode();
+    }
+
+    BluetoothDevice getBluetoothDevice(){
+        return mBluetoothDevice;
     }
 
     private BluetoothDevice mBluetoothDevice;

@@ -9,6 +9,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.CompoundButton;
 import android.widget.ListView;
@@ -27,6 +28,14 @@ public class DiscoveredDevicesActivity extends AppCompatActivity {
         setLeCallback();
         updateBluetoothHelpers();
         setSwitchListener();
+        setLoadingStatus(false);
+    }
+
+    private void setLoadingStatus(boolean status) {
+        if(status)
+            findViewById(R.id.loadingCircle).setVisibility(View.VISIBLE);
+        else
+            findViewById(R.id.loadingCircle).setVisibility(View.GONE);
     }
 
     private void setLeCallback() {
@@ -43,6 +52,7 @@ public class DiscoveredDevicesActivity extends AppCompatActivity {
         final ListView listView = (ListView)findViewById(R.id.BluetoothDevicesViewId);
         mBluetoothListAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, mBLEDevices);
         listView.setAdapter(mBluetoothListAdapter);
+        listView.setOnItemClickListener(new ItemSelectedAction(this));
     }
 
     private void setSwitchListener() {
