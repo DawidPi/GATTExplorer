@@ -1,15 +1,24 @@
 package com.projects.dawid.gattclient;
 
+import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCallback;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothProfile;
+import android.content.Context;
+import android.content.Intent;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
-class GATTCallback extends BluetoothGattCallback {
-    GATTCallback() {
+class ServiceGATTCallback extends BluetoothGattCallback {
+    private BluetoothGatt mGattService;
+    private Context mServiceContext;
+    private String TAG = "GATT CALLBACK";
+
+    ServiceGATTCallback(Context serviceContext) {
         super();
+        mServiceContext = serviceContext;
     }
 
     @Override
@@ -20,11 +29,21 @@ class GATTCallback extends BluetoothGattCallback {
 
         if(newState == BluetoothProfile.STATE_CONNECTED){
             Log.i(TAG, "Bluetooth device connected");
+            notifyConnectionSuccessful(gatt.getDevice());
+            mGattService = gatt;
             gatt.discoverServices();
         }
         else if (newState == BluetoothProfile.STATE_DISCONNECTED){
             Log.i(TAG, "Bluetooth device disconnected");
         }
+    }
+
+    private void notifyConnectionSuccessful(BluetoothDevice device) {
+        Intent connectionSuccessfulIntent = new Intent();
+        connectionSuccessfulIntent.setAction(BLEService.RESPONSE);
+        connectionSuccessfulIntent.putExtra(BLEService.RESPONSE, BLEService.Responses.CONNECTION_SUCCESSFUL);
+        connectionSuccessfulIntent.putExtra(BLEService.Responses.DEVICE, device);
+        LocalBroadcastManager.getInstance(mServiceContext).sendBroadcast(connectionSuccessfulIntent);
     }
 
     @Override
@@ -57,5 +76,7 @@ class GATTCallback extends BluetoothGattCallback {
         Log.i(TAG, "Descriptor write finished!");
     }
 
-    private String TAG = "GATT CALLBACK";
+    public BluetoothGatt getGattService() {
+        return mGattService;
+    }
 }

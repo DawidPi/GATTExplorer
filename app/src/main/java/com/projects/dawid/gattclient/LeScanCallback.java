@@ -5,15 +5,16 @@ import android.bluetooth.le.ScanCallback;
 import android.bluetooth.le.ScanResult;
 import android.widget.ArrayAdapter;
 import android.widget.Toast;
+
 import java.util.HashSet;
 import java.util.List;
 
 
-/**
- * Created by Dawid on 02.11.2016.
- */
-
 public class LeScanCallback extends ScanCallback {
+    private DiscoveredDevicesActivity mContext;
+    private HashSet<BluetoothDeviceAdapter> mBluetoothDevicesSet = new HashSet<>();
+    private ArrayAdapter<BluetoothDeviceAdapter> mAdapter;
+
     public LeScanCallback(DiscoveredDevicesActivity context, ArrayAdapter<BluetoothDeviceAdapter> devices) {
         super();
 
@@ -45,8 +46,4 @@ public class LeScanCallback extends ScanCallback {
         mBluetoothDevicesSet.add(new BluetoothDeviceAdapter(newDevice));
         mAdapter.add(new BluetoothDeviceAdapter(newDevice));
     }
-
-    private DiscoveredDevicesActivity mContext;
-    private HashSet<BluetoothDeviceAdapter> mBluetoothDevicesSet = new HashSet<>();
-    private ArrayAdapter<BluetoothDeviceAdapter> mAdapter;
 }
