@@ -8,6 +8,7 @@ import android.bluetooth.BluetoothManager;
 import android.bluetooth.le.BluetoothLeScanner;
 import android.content.Context;
 import android.content.Intent;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
 
@@ -94,6 +95,10 @@ public class BLEService extends IntentService {
 
     private void stopLEScan() {
         mBluetoothScanner.stopScan(mScanCallback);
+        Intent scanFinishedResponse = new Intent();
+        scanFinishedResponse.setAction(RESPONSE);
+        scanFinishedResponse.putExtra(RESPONSE, Responses.SCAN_FINISHED);
+        LocalBroadcastManager.getInstance(this).sendBroadcast(scanFinishedResponse);
     }
 
     private void startLEScan() {
@@ -113,6 +118,7 @@ public class BLEService extends IntentService {
     public static final class Responses {
         public static final int DEVICE_FOUND = 0;
         public static final int CONNECTION_SUCCESSFUL = 1;
+        public static final int SCAN_FINISHED = 2;
         public static final String DEVICE = Requests.DEVICE;
     }
 }

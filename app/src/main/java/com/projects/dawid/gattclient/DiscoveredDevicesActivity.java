@@ -7,11 +7,11 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
 import android.util.Log;
-import android.view.View;
-import android.widget.CompoundButton;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.widget.ListView;
-import android.widget.Switch;
 import android.widget.Toast;
 
 import java.util.ArrayList;
@@ -30,12 +30,15 @@ public class DiscoveredDevicesActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_discovered_devices);
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
 
         setListView();
         updateBluetoothHelpers();
-        setSwitchListener();
-        setLoadingStatus(false);
         setBroadcastReceiver();
+
+        clearDevices();
+        requestNewScan();
     }
 
     @Override
@@ -44,6 +47,16 @@ public class DiscoveredDevicesActivity extends AppCompatActivity {
         super.onSaveInstanceState(outState);
         outState.putParcelableArrayList(BT_DEVICES_KEY, mBLEDevices);
         outState.putParcelable(BT_CONNECTED_KEY, mBluetoothListAdapter.getConnectedDevice());
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if (item.getItemId() == R.id.bluetoothDiscover) {
+            clearDevices();
+            requestNewScan();
+        }
+
+        return super.onOptionsItemSelected(item);
     }
 
     @Override
@@ -59,17 +72,16 @@ public class DiscoveredDevicesActivity extends AppCompatActivity {
 
     }
 
-    private void setBroadcastReceiver() {
-        BLEServiceBroadcastReceiver serviceReceiver = new BLEServiceBroadcastReceiver(mBluetoothListAdapter);
-        LocalBroadcastManager.getInstance(this).registerReceiver(serviceReceiver,
-                BLEServiceBroadcastReceiver.ResponseIntentFilter);
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu, menu);
+        return true;
     }
 
-    private void setLoadingStatus(boolean status) {
-        if(status)
-            findViewById(R.id.loadingCircle).setVisibility(View.VISIBLE);
-        else
-            findViewById(R.id.loadingCircle).setVisibility(View.GONE);
+    private void setBroadcastReceiver() {
+        BLEServiceBroadcastReceiver serviceReceiver = new BLEServiceBroadcastReceiver(this, mBluetoothListAdapter);
+        LocalBroadcastManager.getInstance(this).registerReceiver(serviceReceiver,
+                BLEServiceBroadcastReceiver.ResponseIntentFilter);
     }
 
     private void updateBluetoothHelpers() {
@@ -83,41 +95,10 @@ public class DiscoveredDevicesActivity extends AppCompatActivity {
         listView.setOnItemClickListener(new ItemSelectedAction(this));
     }
 
-    private void setSwitchListener() {
-        final Switch viewSwitch = (Switch)findViewById(R.id.ScanSwitchId);
-        viewSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton compoundButton, boolean scanningON) {
-                if(compoundButton == viewSwitch){
-                    if (scanningON){
-                        activateBluetoothAndStartScanning();
-                    }
-                    else{
-                        stopScanning();
-                    }
-                }
-            }
-        });
-    }
-
-    private void stopScanning() {
-        Toast.makeText(this, "Scanning stopped", Toast.LENGTH_SHORT).show();
-    }
-
-    private void activateBluetoothAndStartScanning() {
-        if(!mBluetoothAdapter.isEnabled()){
-            Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-            startActivityForResult(enableBtIntent, BLE_ENABLED);
-            return;
-        }
-
-        startScanning();
-    }
-
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if(requestCode == BLE_ENABLED && resultCode == RESULT_OK){
-            startScanning();
+            clearDevices();
         }
         else{
             Toast.makeText(this, R.string.BLUETOOTH_NOT_ENABLED, Toast.LENGTH_SHORT).show();
@@ -125,11 +106,44 @@ public class DiscoveredDevicesActivity extends AppCompatActivity {
         super.onActivityResult(requestCode, resultCode, data);
     }
 
-    private void startScanning() {
-        Intent bleIntent = new Intent(this, BLEService.class);
-        bleIntent.setAction(BLEService.REQUEST);
-        bleIntent.putExtra(BLEService.REQUEST, BLEService.Requests.PERFORM_SCAN);
-        startService(bleIntent);
+    private void clearDevices() {
+        clearLocalDevices();
+        requestNewScan();
+    }
+
+    private void requestNewScan() {
+        stopCurrentScan();
+        startNewScan();
+    }
+
+    private void startNewScan() {
+        if (activateBluetooth()) return;
+
+        Intent newScanRequest = new Intent(this, BLEService.class);
+        newScanRequest.setAction(BLEService.REQUEST);
+        newScanRequest.putExtra(BLEService.REQUEST, BLEService.Requests.PERFORM_SCAN);
+        startService(newScanRequest);
+    }
+
+    private boolean activateBluetooth() {
+        if (!mBluetoothAdapter.isEnabled()) {
+            Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+            startActivityForResult(enableBtIntent, BLE_ENABLED);
+            return true;
+        }
+        return false;
+    }
+
+    private void stopCurrentScan() {
+        Intent stopScanRequest = new Intent(this, BLEService.class);
+        stopScanRequest.setAction(BLEService.REQUEST);
+        stopScanRequest.putExtra(BLEService.REQUEST, BLEService.Requests.STOP_SCAN);
+        startService(stopScanRequest);
+    }
+
+    private void clearLocalDevices() {
+        mBLEDevices.clear();
+        mBluetoothListAdapter.clear();
     }
 
     @Override

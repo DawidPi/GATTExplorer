@@ -14,8 +14,9 @@ public class BLEServiceBroadcastReceiver extends BroadcastReceiver {
     private static String TAG = "Broadcast Receiver";
     private HashMap<String, BluetoothDevice> mBluetoothDevices = new HashMap<>();
     private ConnectedArrayAdapter mBluetoothDevicesAdapter;
+    private Context mActivityContext;
 
-    public BLEServiceBroadcastReceiver(ConnectedArrayAdapter devicesAdapter) {
+    public BLEServiceBroadcastReceiver(Context context, ConnectedArrayAdapter devicesAdapter) {
         mBluetoothDevicesAdapter = devicesAdapter;
     }
 
@@ -43,6 +44,10 @@ public class BLEServiceBroadcastReceiver extends BroadcastReceiver {
                 updateConnectedDevice(intent);
                 break;
 
+            case BLEService.Responses.SCAN_FINISHED:
+                clearDevices();
+                break;
+
             case -1:
                 Log.e(TAG, "No response type specified!");
                 break;
@@ -50,6 +55,11 @@ public class BLEServiceBroadcastReceiver extends BroadcastReceiver {
                 Log.e(TAG, "Response type unknown");
         }
 
+    }
+
+    private void clearDevices() {
+        mBluetoothDevices.clear();
+        mBluetoothDevicesAdapter.clear();
     }
 
     private void updateConnectedDevice(Intent intent) {

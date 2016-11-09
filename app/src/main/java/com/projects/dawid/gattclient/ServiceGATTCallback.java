@@ -31,7 +31,6 @@ class ServiceGATTCallback extends BluetoothGattCallback {
             Log.i(TAG, "Bluetooth device connected");
             notifyConnectionSuccessful(gatt.getDevice());
             mGattService = gatt;
-            gatt.discoverServices();
         }
         else if (newState == BluetoothProfile.STATE_DISCONNECTED){
             Log.i(TAG, "Bluetooth device disconnected");

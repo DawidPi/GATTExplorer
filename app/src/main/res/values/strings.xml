@@ -2,4 +2,5 @@
     <string name="app_name">GATTClient</string>
     <string name="switch_text">LE scanning status</string>
     <string name="BLUETOOTH_NOT_ENABLED">Bluetooth is not enabled! Cannot continue work!</string>
+    <string name="discover_devices_button">Discover devices</string>
 </resources>
