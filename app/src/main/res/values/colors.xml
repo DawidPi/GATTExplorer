@@ -9,4 +9,5 @@
     <color name="colorTextDefaultDevice">#000000</color>
     <color name="colorDeviceConnectedSnackbarAction">#00ff00</color>
     <color name="colorDeviceDisconnectedSnackbarAction">#00fff2</color>
+    <color name="colorDeviceSearchSnackbarAction">#fff349</color>
 </resources>

@@ -48,6 +48,10 @@ public class BLEServiceBroadcastReceiver extends BroadcastReceiver {
                 clearDevices();
                 break;
 
+            case BLEService.Responses.CONNECTION_LOST:
+                notifyOnConnectionLost(intent);
+                break;
+
             case -1:
                 Log.e(TAG, "No response type specified!");
                 break;
@@ -55,6 +59,17 @@ public class BLEServiceBroadcastReceiver extends BroadcastReceiver {
                 Log.e(TAG, "Response type unknown");
         }
 
+    }
+
+    private void notifyOnConnectionLost(Intent intent) {
+        if (intent != null) {
+            BluetoothDevice device = intent.getParcelableExtra(BLEService.Responses.DEVICE);
+            if (device != null) {
+                mBluetoothDevices.remove(device.getName());
+                mBluetoothDevicesAdapter.remove(new BluetoothDeviceAdapter(device));
+                mBluetoothDevicesAdapter.getConnectedDevices().remove(new BluetoothDeviceAdapter(device));
+            }
+        }
     }
 
     private void clearDevices() {

@@ -5,11 +5,11 @@ import android.bluetooth.BluetoothManager;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
-import android.os.Parcelable;
+import android.support.design.widget.Snackbar;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.ListView;
@@ -41,43 +41,6 @@ public class DiscoveredDevicesActivity extends AppCompatActivity {
 
         clearDevices();
         requestNewScan();
-    }
-
-    @Override
-    protected void onSaveInstanceState(Bundle outState) {
-        Log.i(TAG, "Saving instance");
-        super.onSaveInstanceState(outState);
-        outState.putParcelableArrayList(BT_DEVICES_KEY, mBLEDevices);
-        Parcelable[] connectedDevices = new Parcelable[mBluetoothListAdapter.getConnectedDevices().size()];
-        logDevices(connectedDevices);
-        mBluetoothListAdapter.getConnectedDevices().toArray(connectedDevices);
-        outState.putParcelableArray(BT_CONNECTED_KEY, connectedDevices);
-    }
-
-    @Override
-    protected void onRestoreInstanceState(Bundle savedInstanceState) {
-        Log.i(TAG, "Restoring instance");
-        super.onRestoreInstanceState(savedInstanceState);
-        mBLEDevices = savedInstanceState.getParcelableArrayList(BT_DEVICES_KEY);
-        Log.i(TAG, ">>> Devices <<<");
-        for (BluetoothDeviceAdapter device : mBLEDevices) {
-            Log.i(TAG, "Device: " + device.toString());
-        }
-        Parcelable[] connectedDevices = savedInstanceState.getParcelableArray(BT_CONNECTED_KEY);
-        mBluetoothListAdapter.addAll(mBLEDevices);
-        ((ListView) findViewById(R.id.BluetoothDevicesViewId)).setAdapter(mBluetoothListAdapter);
-        logDevices(connectedDevices);
-
-        mBluetoothListAdapter.notifyDataSetChanged();
-    }
-
-    private void logDevices(Parcelable[] connectedDevices) {
-        Log.i(TAG, ">>> DEVICES <<<");
-        for (Parcelable device :
-                connectedDevices) {
-            Log.i(TAG, "Device: " + device.toString());
-            mBluetoothListAdapter.addConnectedDevice((BluetoothDeviceAdapter) device);
-        }
     }
 
     @Override
@@ -132,8 +95,18 @@ public class DiscoveredDevicesActivity extends AppCompatActivity {
     }
 
     private void requestNewScan() {
+        showSearchingSnackBar();
         stopCurrentScan();
         startNewScan();
+    }
+
+    private void showSearchingSnackBar() {
+        Snackbar snackbar = Snackbar.make(findViewById(android.R.id.content),
+                R.string.SnackbarSearchingForDevices, Snackbar.LENGTH_INDEFINITE);
+
+        snackbar.setAction(R.string.SnackbarSearchingForDevicesAction, new SnackBarCallbacks.DismissCallback(snackbar));
+        snackbar.setActionTextColor(ContextCompat.getColor(this, R.color.colorDeviceSearchSnackbarAction));
+        snackbar.show();
     }
 
     private void startNewScan() {

@@ -3,6 +3,7 @@ package com.projects.dawid.gattclient;
 import android.app.Activity;
 import android.bluetooth.BluetoothDevice;
 import android.content.Intent;
+import android.support.design.widget.Snackbar;
 import android.view.View;
 
 /**
@@ -65,6 +66,21 @@ public abstract class SnackBarCallbacks {
             intent.putExtra(BLEService.REQUEST, BLEService.Requests.DISCONNECT);
             intent.putExtra(BLEService.Requests.DEVICE, mDevice);
             mActivity.startService(intent);
+        }
+    }
+
+    public static class DismissCallback implements View.OnClickListener {
+
+
+        private final Snackbar mSnackBar;
+
+        DismissCallback(Snackbar snackbar) {
+            mSnackBar = snackbar;
+        }
+
+        @Override
+        public void onClick(View view) {
+            mSnackBar.dismiss();
         }
     }
 }

@@ -4,6 +4,7 @@ import android.app.IntentService;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
+import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.le.BluetoothLeScanner;
 import android.content.Context;
@@ -84,14 +85,27 @@ public class BLEService extends IntentService {
     }
 
     private void discoverServices(Intent intent) {
-        //todo implement
+        Log.i(TAG, "Start service discovery");
+        BluetoothDevice device = intent.getParcelableExtra(Requests.DEVICE);
+
+        if (device != null) {
+            BluetoothGatt gatt = mGATTCallback.getGattForDevice(device);
+            if (gatt != null) {
+                for (BluetoothGattService service : gatt.getServices()) {
+                    Log.i(TAG, "Service: " + service.toString());
+                }
+            }
+        } else {
+            Log.e(TAG, "device is null!");
+        }
     }
 
     private void disconnectCurrentDevice() {
-        BluetoothGatt gattService = mGATTCallback.getGattService();
-        if (gattService != null) {
-            gattService.disconnect();
+        for (BluetoothGatt gattProfile : mGATTCallback.getAllGatts()) {
+            gattProfile.disconnect();
+            gattProfile.close();
         }
+        ;
     }
 
     private void connectDevice(Intent intent) {
@@ -127,6 +141,7 @@ public class BLEService extends IntentService {
         public static final int DEVICE_FOUND = 0;
         public static final int CONNECTION_SUCCESSFUL = 1;
         public static final int SCAN_FINISHED = 2;
+        public static final int CONNECTION_LOST = 3;
         public static final String DEVICE = Requests.DEVICE;
     }
 }
