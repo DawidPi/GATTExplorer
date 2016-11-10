@@ -71,12 +71,20 @@ public class BLEService extends IntentService {
                     disconnectCurrentDevice();
                     break;
 
+                case Requests.PERFORM_SERVICE_DISCOVERY:
+                    discoverServices(intent);
+                    break;
+
                 case -1:
                     Log.e(TAG, "No request sent!");
                 default:
                     Log.e(TAG, "Unknown request type!");
             }
         }
+    }
+
+    private void discoverServices(Intent intent) {
+        //todo implement
     }
 
     private void disconnectCurrentDevice() {

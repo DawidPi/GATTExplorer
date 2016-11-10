@@ -63,24 +63,17 @@ public class BLEServiceBroadcastReceiver extends BroadcastReceiver {
     }
 
     private void updateConnectedDevice(Intent intent) {
-        Log.i(TAG, "Updating connected Device");
-
         BluetoothDevice connectedBTDevice = intent.getParcelableExtra(BLEService.Responses.DEVICE);
 
         if (connectedBTDevice != null) {
-            mBluetoothDevicesAdapter.setConnectedDevice(new BluetoothDeviceAdapter(connectedBTDevice));
+            mBluetoothDevicesAdapter.addConnectedDevice(new BluetoothDeviceAdapter(connectedBTDevice));
             mBluetoothDevicesAdapter.notifyDataSetChanged();
-        } else {
-            Log.e(TAG, "Connected device is null!");
         }
     }
 
     private void updateDeviceList(Intent responseIntent) {
-        Log.i(TAG, "Updating device list");
-
         BluetoothDevice newDevice = responseIntent.getParcelableExtra(BLEService.Responses.DEVICE);
         if (newDevice == null) {
-            Log.e(TAG, "New bluetooth device is null");
             return;
         }
 
@@ -101,5 +94,9 @@ public class BLEServiceBroadcastReceiver extends BroadcastReceiver {
     private void addNewDevice(BluetoothDevice newDevice) {
         mBluetoothDevices.put(newDevice.getName(), newDevice);
         mBluetoothDevicesAdapter.add(new BluetoothDeviceAdapter(newDevice));
+    }
+
+    public void clearCachedDevices() {
+        mBluetoothDevices.clear();
     }
 }

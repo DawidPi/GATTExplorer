@@ -5,6 +5,7 @@ import android.bluetooth.BluetoothManager;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Parcelable;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
@@ -25,6 +26,7 @@ public class DiscoveredDevicesActivity extends AppCompatActivity {
     private BluetoothAdapter mBluetoothAdapter;
     private ConnectedArrayAdapter mBluetoothListAdapter;
     private ArrayList<BluetoothDeviceAdapter> mBLEDevices = new ArrayList<>();
+    private BLEServiceBroadcastReceiver mBroadcastReceiver;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -46,7 +48,36 @@ public class DiscoveredDevicesActivity extends AppCompatActivity {
         Log.i(TAG, "Saving instance");
         super.onSaveInstanceState(outState);
         outState.putParcelableArrayList(BT_DEVICES_KEY, mBLEDevices);
-        outState.putParcelable(BT_CONNECTED_KEY, mBluetoothListAdapter.getConnectedDevice());
+        Parcelable[] connectedDevices = new Parcelable[mBluetoothListAdapter.getConnectedDevices().size()];
+        logDevices(connectedDevices);
+        mBluetoothListAdapter.getConnectedDevices().toArray(connectedDevices);
+        outState.putParcelableArray(BT_CONNECTED_KEY, connectedDevices);
+    }
+
+    @Override
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+        Log.i(TAG, "Restoring instance");
+        super.onRestoreInstanceState(savedInstanceState);
+        mBLEDevices = savedInstanceState.getParcelableArrayList(BT_DEVICES_KEY);
+        Log.i(TAG, ">>> Devices <<<");
+        for (BluetoothDeviceAdapter device : mBLEDevices) {
+            Log.i(TAG, "Device: " + device.toString());
+        }
+        Parcelable[] connectedDevices = savedInstanceState.getParcelableArray(BT_CONNECTED_KEY);
+        mBluetoothListAdapter.addAll(mBLEDevices);
+        ((ListView) findViewById(R.id.BluetoothDevicesViewId)).setAdapter(mBluetoothListAdapter);
+        logDevices(connectedDevices);
+
+        mBluetoothListAdapter.notifyDataSetChanged();
+    }
+
+    private void logDevices(Parcelable[] connectedDevices) {
+        Log.i(TAG, ">>> DEVICES <<<");
+        for (Parcelable device :
+                connectedDevices) {
+            Log.i(TAG, "Device: " + device.toString());
+            mBluetoothListAdapter.addConnectedDevice((BluetoothDeviceAdapter) device);
+        }
     }
 
     @Override
@@ -59,18 +90,6 @@ public class DiscoveredDevicesActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    @Override
-    protected void onRestoreInstanceState(Bundle savedInstanceState) {
-        Log.i(TAG, "Restoring instance");
-        super.onRestoreInstanceState(savedInstanceState);
-        mBLEDevices = savedInstanceState.getParcelableArrayList(BT_DEVICES_KEY);
-        BluetoothDeviceAdapter connectedDeviceAdapter = savedInstanceState.getParcelable(BT_CONNECTED_KEY);
-        mBluetoothListAdapter = new ConnectedArrayAdapter(this, android.R.layout.simple_list_item_1, mBLEDevices);
-        mBluetoothListAdapter.setConnectedDevice(connectedDeviceAdapter);
-        ((ListView) findViewById(R.id.BluetoothDevicesViewId)).setAdapter(mBluetoothListAdapter);
-        mBluetoothListAdapter.notifyDataSetChanged();
-
-    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -79,8 +98,8 @@ public class DiscoveredDevicesActivity extends AppCompatActivity {
     }
 
     private void setBroadcastReceiver() {
-        BLEServiceBroadcastReceiver serviceReceiver = new BLEServiceBroadcastReceiver(this, mBluetoothListAdapter);
-        LocalBroadcastManager.getInstance(this).registerReceiver(serviceReceiver,
+        mBroadcastReceiver = new BLEServiceBroadcastReceiver(this, mBluetoothListAdapter);
+        LocalBroadcastManager.getInstance(this).registerReceiver(mBroadcastReceiver,
                 BLEServiceBroadcastReceiver.ResponseIntentFilter);
     }
 
@@ -92,7 +111,7 @@ public class DiscoveredDevicesActivity extends AppCompatActivity {
         final ListView listView = (ListView)findViewById(R.id.BluetoothDevicesViewId);
         mBluetoothListAdapter = new ConnectedArrayAdapter(this, android.R.layout.simple_list_item_1, mBLEDevices);
         listView.setAdapter(mBluetoothListAdapter);
-        listView.setOnItemClickListener(new ItemSelectedAction(this));
+        listView.setOnItemClickListener(new ItemSelectedAction(this, this, mBluetoothListAdapter.getConnectedDevices()));
     }
 
     @Override
@@ -109,6 +128,7 @@ public class DiscoveredDevicesActivity extends AppCompatActivity {
     private void clearDevices() {
         clearLocalDevices();
         requestNewScan();
+        mBroadcastReceiver.clearCachedDevices();
     }
 
     private void requestNewScan() {
@@ -144,12 +164,22 @@ public class DiscoveredDevicesActivity extends AppCompatActivity {
     private void clearLocalDevices() {
         mBLEDevices.clear();
         mBluetoothListAdapter.clear();
+
+    }
+
+    private void disconnectDevices() {
+        Intent intent = new Intent(this, BLEService.class);
+        intent.setAction(BLEService.REQUEST);
+        intent.putExtra(BLEService.REQUEST, BLEService.Requests.DISCONNECT);
+        startService(intent);
     }
 
     @Override
     protected void onPause() {
-        Intent serviceIntent = new Intent(this, BLEService.class);
-        stopService(serviceIntent);
+        //disconnectDevices();
+        //clearDevices();
+        //Intent serviceIntent = new Intent(this, BLEService.class);
+        //should I stop the service?
 
         super.onPause();
     }
