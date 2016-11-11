@@ -1,8 +1,10 @@
 <resources>
     <string name="app_name">GATT Client</string>
+    <string name="ServiceShowToolbar">Services</string>
     <string name="switch_text">LE scanning status</string>
     <string name="BLUETOOTH_NOT_ENABLED">Bluetooth is not enabled! Cannot continue work!</string>
     <string name="discover_devices_button">Discover devices</string>
+    <string name="go_back_button">Go back</string>
     <string name="SnackbarConnectedDeviceText">Device is connected!</string>
     <string name="SnackbarConnectedDeviceActionText">Show services</string>
     <string name="SnackbarDisconnectedDeviceActionText">Connect device</string>

@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.bluetooth.BluetoothDevice;
 import android.content.Intent;
 import android.support.design.widget.Snackbar;
+import android.util.Log;
 import android.view.View;
 
 /**
@@ -15,6 +16,7 @@ public abstract class SnackBarCallbacks {
     public static class DiscoverServicesCallback implements View.OnClickListener {
         private final BluetoothDevice mDevice;
         private final Activity mActivity;
+        private String TAG = "DiscoverServices";
 
         DiscoverServicesCallback(Activity activity, BluetoothDevice deviceToDiscoverServices) {
             mActivity = activity;
@@ -23,6 +25,7 @@ public abstract class SnackBarCallbacks {
 
         @Override
         public void onClick(View view) {
+            Log.i(TAG, "Discover services for device: " + mDevice);
             Intent intent = new Intent(mActivity, BLEService.class);
             intent.setAction(BLEService.REQUEST);
             intent.putExtra(BLEService.REQUEST, BLEService.Requests.PERFORM_SERVICE_DISCOVERY);

@@ -21,8 +21,6 @@ public class DiscoveredDevicesActivity extends AppCompatActivity {
 
     private final static int BLE_ENABLED = 1;
     private final String TAG = "ACTIVITY";
-    private String BT_DEVICES_KEY = "com.Pilarski.BT_DEVICES";
-    private String BT_CONNECTED_KEY = "com.Pilarski.BT_CONNECTED";
     private BluetoothAdapter mBluetoothAdapter;
     private ConnectedArrayAdapter mBluetoothListAdapter;
     private ArrayList<BluetoothDeviceAdapter> mBLEDevices = new ArrayList<>();
@@ -56,7 +54,7 @@ public class DiscoveredDevicesActivity extends AppCompatActivity {
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.menu, menu);
+        getMenuInflater().inflate(R.menu.main_menu, menu);
         return true;
     }
 

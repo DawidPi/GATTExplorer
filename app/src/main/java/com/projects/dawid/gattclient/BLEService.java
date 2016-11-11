@@ -4,7 +4,6 @@ import android.app.IntentService;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
-import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.le.BluetoothLeScanner;
 import android.content.Context;
@@ -36,6 +35,7 @@ public class BLEService extends IntentService {
     private void initializeBluetooth() {
         if (mBluetoothAdapter == null)
             mBluetoothAdapter = ((BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE)).getAdapter();
+
         if (mBluetoothScanner == null)
             mBluetoothScanner = mBluetoothAdapter.getBluetoothLeScanner();
 
@@ -43,7 +43,9 @@ public class BLEService extends IntentService {
             mScanCallback = new ServiceLEScanCallback(this);
 
         if (mGATTCallback == null)
-            mGATTCallback = new ServiceGATTCallback(this);
+            mGATTCallback = ServiceGATTCallback.getInstance(this);
+
+
     }
 
     @Override
@@ -69,7 +71,7 @@ public class BLEService extends IntentService {
                     break;
 
                 case Requests.DISCONNECT:
-                    disconnectCurrentDevice();
+                    disconnectDevices();
                     break;
 
                 case Requests.PERFORM_SERVICE_DISCOVERY:
@@ -85,27 +87,19 @@ public class BLEService extends IntentService {
     }
 
     private void discoverServices(Intent intent) {
-        Log.i(TAG, "Start service discovery");
+        Log.i(TAG, "Notifying about services");
         BluetoothDevice device = intent.getParcelableExtra(Requests.DEVICE);
+        BluetoothGatt gatt = mGATTCallback.getGattForDevice(device);
 
-        if (device != null) {
-            BluetoothGatt gatt = mGATTCallback.getGattForDevice(device);
-            if (gatt != null) {
-                for (BluetoothGattService service : gatt.getServices()) {
-                    Log.i(TAG, "Service: " + service.toString());
-                }
-            }
+        if (gatt != null) {
+            gatt.discoverServices();
         } else {
-            Log.e(TAG, "device is null!");
+            Log.e(TAG, "Gatt is null!");
         }
     }
 
-    private void disconnectCurrentDevice() {
-        for (BluetoothGatt gattProfile : mGATTCallback.getAllGatts()) {
-            gattProfile.disconnect();
-            gattProfile.close();
-        }
-        ;
+    private void disconnectDevices() {
+        //todo implement
     }
 
     private void connectDevice(Intent intent) {
@@ -142,6 +136,9 @@ public class BLEService extends IntentService {
         public static final int CONNECTION_SUCCESSFUL = 1;
         public static final int SCAN_FINISHED = 2;
         public static final int CONNECTION_LOST = 3;
+        public static final int SERVICES_DISCOVERED = 4;
+
         public static final String DEVICE = Requests.DEVICE;
+        public static final String SERVICES_LIST = PREFIX + "SERVICES";
     }
 }

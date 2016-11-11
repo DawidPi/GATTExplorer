@@ -1,12 +1,15 @@
 package com.projects.dawid.gattclient;
 
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothGattService;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.os.Bundle;
 import android.util.Log;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 
 public class BLEServiceBroadcastReceiver extends BroadcastReceiver {
@@ -18,6 +21,7 @@ public class BLEServiceBroadcastReceiver extends BroadcastReceiver {
 
     public BLEServiceBroadcastReceiver(Context context, ConnectedArrayAdapter devicesAdapter) {
         mBluetoothDevicesAdapter = devicesAdapter;
+        mActivityContext = context;
     }
 
     @Override
@@ -52,6 +56,10 @@ public class BLEServiceBroadcastReceiver extends BroadcastReceiver {
                 notifyOnConnectionLost(intent);
                 break;
 
+            case BLEService.Responses.SERVICES_DISCOVERED:
+                createViewWithServices(intent);
+                break;
+
             case -1:
                 Log.e(TAG, "No response type specified!");
                 break;
@@ -61,15 +69,39 @@ public class BLEServiceBroadcastReceiver extends BroadcastReceiver {
 
     }
 
+    private void createViewWithServices(Intent intent) {
+        Log.i(TAG, "creating new activity!");
+        BluetoothDevice device = intent.getParcelableExtra(BLEService.Responses.DEVICE);
+        if (device == null) {
+            Log.e(TAG, "device is null!");
+            return;
+        }
+
+        Bundle bundle = intent.getExtras();
+        ArrayList<BluetoothGattService> services = bundle.getParcelableArrayList(BLEService.Responses.SERVICES_LIST);
+
+        if (services != null) {
+            for (BluetoothGattService service : services) {
+                Log.i(TAG, "service : " + service);
+            }
+        } else {
+            Log.e(TAG, "ERROR");
+        }
+
+        Intent serviceShowIntent = new Intent(mActivityContext, ServiceShowActivity.class);
+        serviceShowIntent.putExtra(ServiceShowActivity.DEVICE, device);
+        //todo finish me
+        //serviceShowIntent.putParcelableArrayListExtra(ServiceShowActivity.SERVICE_LIST, services);
+        mActivityContext.startActivity(serviceShowIntent);
+    }
+
     private void notifyOnConnectionLost(Intent intent) {
-        if (intent != null) {
             BluetoothDevice device = intent.getParcelableExtra(BLEService.Responses.DEVICE);
             if (device != null) {
                 mBluetoothDevices.remove(device.getName());
                 mBluetoothDevicesAdapter.remove(new BluetoothDeviceAdapter(device));
                 mBluetoothDevicesAdapter.getConnectedDevices().remove(new BluetoothDeviceAdapter(device));
             }
-        }
     }
 
     private void clearDevices() {
