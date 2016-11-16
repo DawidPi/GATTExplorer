@@ -21,6 +21,7 @@
         app:popupTheme="@style/ThemeOverlay.AppCompat.Light" />
 
     <ExpandableListView
+        android:id="@+id/servicesView"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 

@@ -6,7 +6,6 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.os.Bundle;
 import android.util.Log;
 
 import java.util.ArrayList;
@@ -71,27 +70,13 @@ public class BLEServiceBroadcastReceiver extends BroadcastReceiver {
 
     private void createViewWithServices(Intent intent) {
         Log.i(TAG, "creating new activity!");
+
         BluetoothDevice device = intent.getParcelableExtra(BLEService.Responses.DEVICE);
-        if (device == null) {
-            Log.e(TAG, "device is null!");
-            return;
-        }
-
-        Bundle bundle = intent.getExtras();
-        ArrayList<BluetoothGattService> services = bundle.getParcelableArrayList(BLEService.Responses.SERVICES_LIST);
-
-        if (services != null) {
-            for (BluetoothGattService service : services) {
-                Log.i(TAG, "service : " + service);
-            }
-        } else {
-            Log.e(TAG, "ERROR");
-        }
+        ArrayList<BluetoothGattService> services = intent.getParcelableArrayListExtra(BLEService.Responses.SERVICES_LIST);
 
         Intent serviceShowIntent = new Intent(mActivityContext, ServiceShowActivity.class);
         serviceShowIntent.putExtra(ServiceShowActivity.DEVICE, device);
-        //todo finish me
-        //serviceShowIntent.putParcelableArrayListExtra(ServiceShowActivity.SERVICE_LIST, services);
+        ServiceShowActivity.setServicesList(services);
         mActivityContext.startActivity(serviceShowIntent);
     }
 
