@@ -3,6 +3,7 @@ package com.projects.dawid.gattclient;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattService;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
@@ -47,7 +48,15 @@ public class ServiceShowActivity extends AppCompatActivity {
             Log.i(TAG, "service: " + service.getUuid());
         }
 
+        askForUpdatesAboutDevice();
         fillServicesView();
+    }
+
+    private void askForUpdatesAboutDevice() {
+        Intent registerDeviceNotificationsIntent = new Intent(this, BLEService.class);
+        registerDeviceNotificationsIntent.setAction(BLEService.REQUEST);
+        registerDeviceNotificationsIntent.putExtra(BLEService.REQUEST, BLEService.Requests.REGISTER_NOTIFICATIONS);
+        startService(registerDeviceNotificationsIntent);
     }
 
     private void fillServicesView() {
@@ -70,6 +79,8 @@ public class ServiceShowActivity extends AppCompatActivity {
             for (BluetoothGattCharacteristic characteristic : service.getCharacteristics()) {
                 Map<String, String> currentCharacteristicMap = new HashMap<>();
                 currentCharacteristicMap.put("NAME", translator.standardUUID(characteristic.getUuid()));
+                logCharacteristic(characteristic);
+                //currentCharacteristicMap.put("NAME1", characteristic.getStringValue(0));
                 characteristics.add(currentCharacteristicMap);
             }
             childrenData.add(characteristics);
@@ -81,6 +92,19 @@ public class ServiceShowActivity extends AppCompatActivity {
                 new String[]{"NAME"}, new int[]{android.R.id.text1});
 
         return adapter;
+    }
+
+    private void logCharacteristic(BluetoothGattCharacteristic characteristic) {
+        GATTUUIDTranslator translator = new GATTUUIDTranslator();
+        Log.d(TAG, "Characteristic " + translator.standardUUID(characteristic.getUuid()));
+        byte[] characteristicValue = characteristic.getValue();
+        if (characteristicValue != null) {
+            for (byte singleByte : characteristicValue) {
+                Log.d(TAG, "Value: " + singleByte);
+            }
+        } else {
+            Log.e(TAG, "value is null!");
+        }
     }
 
     private void setupActionBar() {

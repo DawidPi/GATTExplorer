@@ -78,6 +78,10 @@ public class BLEService extends IntentService {
                     discoverServices(intent);
                     break;
 
+                case Requests.REGISTER_NOTIFICATIONS:
+                    startNotifications(intent);
+                    break;
+                
                 case -1:
                     Log.e(TAG, "No request sent!");
                 default:
@@ -86,8 +90,18 @@ public class BLEService extends IntentService {
         }
     }
 
+    private void startNotifications(Intent intent) {
+        //todo finish
+//        Log.i(TAG, "Registering notifications");
+//        BluetoothDevice device = intent.getParcelableExtra(Requests.DEVICE);
+//        BluetoothGatt gatt = mGATTCallback.getGattForDevice(device);
+//        device.
+//        for(BluetoothGattCharacteristic characteristic : gatt.)
+
+    }
+
     private void discoverServices(Intent intent) {
-        Log.i(TAG, "Notifying about services");
+        Log.i(TAG, "Notifying about discovered services");
         BluetoothDevice device = intent.getParcelableExtra(Requests.DEVICE);
         BluetoothGatt gatt = mGATTCallback.getGattForDevice(device);
 
@@ -127,6 +141,7 @@ public class BLEService extends IntentService {
         public static final int STOP_SCAN = 2;
         public static final int CONNECT_GATT = 3;
         public static final int DISCONNECT = 4;
+        public static final int REGISTER_NOTIFICATIONS = 5;
 
         public static final String DEVICE = PREFIX + "DEVICE";
     }

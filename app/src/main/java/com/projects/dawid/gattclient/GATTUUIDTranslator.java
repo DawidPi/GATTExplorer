@@ -22,6 +22,33 @@ public class GATTUUIDTranslator {
     private void fillMap() {
         fillServicesInfo();
         fillCharacteristicInfo();
+        fillDeclaration();
+        fillDescriptors();
+    }
+
+    private void fillDescriptors() {
+        mUUIDMap.put(0x2905, "Characteristic Aggregate Format");
+        mUUIDMap.put(0x2900, "Characteristic Extended Properties");
+        mUUIDMap.put(0x2904, "Characteristic Presentation Format");
+        mUUIDMap.put(0x2901, "Characteristic User Description");
+        mUUIDMap.put(0x2902, "Client Characteristic Configuration");
+        mUUIDMap.put(0x290B, "Environmental Sensing Configuration");
+        mUUIDMap.put(0x290C, "Environmental Sensing Measurement");
+        mUUIDMap.put(0x290D, "Environmental Sensing Trigger Setting");
+        mUUIDMap.put(0x2907, "External Report Reference");
+        mUUIDMap.put(0x2909, "Number of Digitals");
+        mUUIDMap.put(0x2908, "Report Reference");
+        mUUIDMap.put(0x2903, "Server Characteristic Configuration");
+        mUUIDMap.put(0x290E, "Time Trigger Setting");
+        mUUIDMap.put(0x2906, "Valid Range");
+        mUUIDMap.put(0x290A, "Value Trigger Setting");
+    }
+
+    private void fillDeclaration() {
+        mUUIDMap.put(0x2803, "GATT Characteristic Declaration");
+        mUUIDMap.put(0x2802, "GATT Include Declaration");
+        mUUIDMap.put(0x2800, "GATT Primary Service Declaration");
+        mUUIDMap.put(0x2801, "GATT Secondary Service Declaration");
     }
 
     private void fillCharacteristicInfo() {
@@ -215,19 +242,19 @@ public class GATTUUIDTranslator {
         mUUIDMap.put(0x1810, "Blood Pressure");
         mUUIDMap.put(0x181B, "Body Composition");
         mUUIDMap.put(0x181E, "Bond Management");
-        mUUIDMap.put(0x180F, "Continuous Glucose Monitoring");
+        mUUIDMap.put(0x181F, "Continuous Glucose Monitoring");
         mUUIDMap.put(0x1805, "Current Time Service");
         mUUIDMap.put(0x1818, "Cycling Power");
         mUUIDMap.put(0x1816, "Cycling Speed and Cadence");
-        mUUIDMap.put(0x180a, "Device Information");
-        mUUIDMap.put(0x181a, "Environmental Sensing");
+        mUUIDMap.put(0x180A, "Device Information");
+        mUUIDMap.put(0x181A, "Environmental Sensing");
         mUUIDMap.put(0x1800, "Generic Access");
         mUUIDMap.put(0x1801, "Generic Attribute");
         mUUIDMap.put(0x1808, "Glucose");
         mUUIDMap.put(0x1809, "Health Thermometer");
         mUUIDMap.put(0x180D, "Heart Rate");
         mUUIDMap.put(0x1823, "HTTP Proxy");
-        mUUIDMap.put(0x1812, "HID");
+        mUUIDMap.put(0x1812, "Human Interface Device");
         mUUIDMap.put(0x1802, "Immediate Alert");
         mUUIDMap.put(0x1821, "Indoor Positioning");
         mUUIDMap.put(0x1820, "Internet Protocol Support");
@@ -235,7 +262,7 @@ public class GATTUUIDTranslator {
         mUUIDMap.put(0x1819, "Location and Navigation");
         mUUIDMap.put(0x1807, "Next DST Change Service");
         mUUIDMap.put(0x1825, "Object Transfer");
-        mUUIDMap.put(0x180E, "Phone Alert Status Device");
+        mUUIDMap.put(0x180E, "Phone Alert Status Service");
         mUUIDMap.put(0x1822, "Pulse Oximeter");
         mUUIDMap.put(0x1806, "Reference Time Update Service");
         mUUIDMap.put(0x1814, "Running Speed and Cadence");
@@ -259,12 +286,12 @@ public class GATTUUIDTranslator {
     }
 
     private int prepareStandardUUIDValue(@NonNull UUID bluetoothUUID) {
-        String lowerUUIDNumber = takeSignificantPartOfUUID(bluetoothUUID);
+        String lowerUUIDNumber = take16BitPartOfUUID(bluetoothUUID);
         Log.d(TAG, "UUID parsed = " + lowerUUIDNumber);
         return Integer.parseInt(lowerUUIDNumber, 16);
     }
 
-    private String takeSignificantPartOfUUID(@NonNull UUID bluetoothUUID) {
+    private String take16BitPartOfUUID(@NonNull UUID bluetoothUUID) {
         return bluetoothUUID.toString().split("-")[0];
     }
 
