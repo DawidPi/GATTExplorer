@@ -48,14 +48,15 @@ public class ServiceShowActivity extends AppCompatActivity {
             Log.i(TAG, "service: " + service.getUuid());
         }
 
-        askForUpdatesAboutDevice();
+        askForReadingAllCharacteristics();
         fillServicesView();
     }
 
-    private void askForUpdatesAboutDevice() {
+    private void askForReadingAllCharacteristics() {
         Intent registerDeviceNotificationsIntent = new Intent(this, BLEService.class);
         registerDeviceNotificationsIntent.setAction(BLEService.REQUEST);
-        registerDeviceNotificationsIntent.putExtra(BLEService.REQUEST, BLEService.Requests.REGISTER_NOTIFICATIONS);
+        registerDeviceNotificationsIntent.putExtra(BLEService.REQUEST, BLEService.Requests.READ_ALL_CHARACTERISTICS);
+        registerDeviceNotificationsIntent.putExtra(BLEService.Requests.DEVICE, mBluetoothDevice);
         startService(registerDeviceNotificationsIntent);
     }
 
@@ -97,14 +98,6 @@ public class ServiceShowActivity extends AppCompatActivity {
     private void logCharacteristic(BluetoothGattCharacteristic characteristic) {
         GATTUUIDTranslator translator = new GATTUUIDTranslator();
         Log.d(TAG, "Characteristic " + translator.standardUUID(characteristic.getUuid()));
-        byte[] characteristicValue = characteristic.getValue();
-        if (characteristicValue != null) {
-            for (byte singleByte : characteristicValue) {
-                Log.d(TAG, "Value: " + singleByte);
-            }
-        } else {
-            Log.e(TAG, "value is null!");
-        }
     }
 
     private void setupActionBar() {

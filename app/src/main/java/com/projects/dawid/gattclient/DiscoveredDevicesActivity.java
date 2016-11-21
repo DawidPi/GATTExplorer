@@ -24,7 +24,7 @@ public class DiscoveredDevicesActivity extends AppCompatActivity {
     private BluetoothAdapter mBluetoothAdapter;
     private ConnectedArrayAdapter mBluetoothListAdapter;
     private ArrayList<BluetoothDeviceAdapter> mBLEDevices = new ArrayList<>();
-    private BLEServiceBroadcastReceiver mBroadcastReceiver;
+    private DiscoveredDevicesBroadcastReceiver mBroadcastReceiver;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -59,9 +59,9 @@ public class DiscoveredDevicesActivity extends AppCompatActivity {
     }
 
     private void setBroadcastReceiver() {
-        mBroadcastReceiver = new BLEServiceBroadcastReceiver(this, mBluetoothListAdapter);
+        mBroadcastReceiver = new DiscoveredDevicesBroadcastReceiver(this, mBluetoothListAdapter);
         LocalBroadcastManager.getInstance(this).registerReceiver(mBroadcastReceiver,
-                BLEServiceBroadcastReceiver.ResponseIntentFilter);
+                DiscoveredDevicesBroadcastReceiver.ResponseIntentFilter);
     }
 
     private void updateBluetoothHelpers() {

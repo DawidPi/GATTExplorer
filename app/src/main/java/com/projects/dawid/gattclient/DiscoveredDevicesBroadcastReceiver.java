@@ -11,14 +11,14 @@ import android.util.Log;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-public class BLEServiceBroadcastReceiver extends BroadcastReceiver {
+public class DiscoveredDevicesBroadcastReceiver extends BroadcastReceiver {
     public static IntentFilter ResponseIntentFilter = new IntentFilter(BLEService.RESPONSE);
     private static String TAG = "Broadcast Receiver";
     private HashMap<String, BluetoothDevice> mBluetoothDevices = new HashMap<>();
     private ConnectedArrayAdapter mBluetoothDevicesAdapter;
     private Context mActivityContext;
 
-    public BLEServiceBroadcastReceiver(Context context, ConnectedArrayAdapter devicesAdapter) {
+    public DiscoveredDevicesBroadcastReceiver(Context context, ConnectedArrayAdapter devicesAdapter) {
         mBluetoothDevicesAdapter = devicesAdapter;
         mActivityContext = context;
     }
@@ -63,7 +63,7 @@ public class BLEServiceBroadcastReceiver extends BroadcastReceiver {
                 Log.e(TAG, "No response type specified!");
                 break;
             default:
-                Log.e(TAG, "Response type unknown");
+                Log.d(TAG, "Response type unknown");
         }
 
     }
