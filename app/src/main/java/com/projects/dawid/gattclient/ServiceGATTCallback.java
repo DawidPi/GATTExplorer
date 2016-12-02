@@ -10,7 +10,6 @@ import android.bluetooth.BluetoothProfile;
 import android.content.Context;
 import android.content.Intent;
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
@@ -27,12 +26,14 @@ import java.util.UUID;
 
 class ServiceGATTCallback extends BluetoothGattCallback {
     private static ServiceGATTCallback staticCallback;
-    private BluetoothGatt mGattService;
     private Context mServiceContext;
     private String TAG = "GATT CALLBACK";
     private Map<BluetoothDevice, BluetoothGatt> mDeviceGattMap = new HashMap<>();
-    private List<BluetoothGattCharacteristic> mCharacteristicsToRead;
-    private List<BluetoothGattDescriptor> mDescriptorsToRead;
+    private List<BluetoothGattCharacteristic> mCharacteristicsLeftToRead;
+    private List<BluetoothGattDescriptor> mDescriptorsLeftToRead;
+    private Integer mDescriptorsWritePending = 0;
+    private boolean mNotificationsSet = false;
+    private boolean mReadingCharacteristicsInProgress = false;
 
     private ServiceGATTCallback(Context serviceContext) {
         super();
@@ -103,80 +104,72 @@ class ServiceGATTCallback extends BluetoothGattCallback {
 
     @Override
     public void onCharacteristicRead(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
-        mCharacteristicsToRead.remove(0);
-        Log.i(TAG, "Characteristics left: " + mDescriptorsToRead.size());
+        Log.i(TAG, "Characteristics left: " + mDescriptorsLeftToRead.size());
 
         logCharacteristic(characteristic);
 
-        if (mCharacteristicsToRead.size() > 0) {
+        if (mCharacteristicsLeftToRead.size() > 0) {
             Log.i(TAG, "Reading next characteristic.");
-            gatt.readCharacteristic(mCharacteristicsToRead.get(0));
+            if (!readNextCharacteristic(gatt)) {
+                finishReadingCharacteristics(gatt);
+            }
         } else {
-            Log.i(TAG, "No characteristics left to read.");
-            mCharacteristicsToRead = null;
+            finishReadingCharacteristics(gatt);
         }
+    }
+
+    private void finishReadingCharacteristics(BluetoothGatt gatt) {
+        Log.i(TAG, "No characteristics left to read.");
+        notifyReadingFinished(gatt);
+        mCharacteristicsLeftToRead = null;
 
         Log.i(TAG, "Reading device finished!");
-        //todo complete
-        //notifyReadingFinished();
+    }
+
+    private void notifyReadingFinished(BluetoothGatt gatt) {
+        BluetoothDevice device = gatt.getDevice();
+        Intent characteristicsReadIntent = new Intent();
+        characteristicsReadIntent.setAction(BLEService.RESPONSE);
+        characteristicsReadIntent.putExtra(BLEService.RESPONSE, BLEService.Responses.READ_ALL_CHARACTERISTICS);
+        characteristicsReadIntent.putExtra(BLEService.Responses.DEVICE, device);
+        CharacteristicsStaticContainer characteristicsContainer = CharacteristicsStaticContainer.getInstance();
+        characteristicsContainer.pushCharacteristics(gatt.getServices());
+
+        LocalBroadcastManager.getInstance(mServiceContext).sendBroadcast(characteristicsReadIntent);
+        mReadingCharacteristicsInProgress = false;
     }
 
     @Override
     public void onDescriptorRead(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
-        mDescriptorsToRead.remove(0);
-        Log.i(TAG, "Descriptors left: " + mDescriptorsToRead.size());
+        mDescriptorsLeftToRead.remove(0);
+        Log.i(TAG, "Descriptors left: " + mDescriptorsLeftToRead.size());
 
-        if (mDescriptorsToRead.size() > 0) {
+        if (mDescriptorsLeftToRead.size() > 0) {
             Log.i(TAG, "Reading next descriptor.");
-            gatt.readDescriptor(mDescriptorsToRead.get(0));
+            gatt.readDescriptor(mDescriptorsLeftToRead.get(0));
         } else {
             Log.i(TAG, "No descriptors left to read.");
-            mDescriptorsToRead = null;
+            mDescriptorsLeftToRead = null;
 
-            if (mCharacteristicsToRead != null) {
+            if (mCharacteristicsLeftToRead != null) {
                 Log.i(TAG, "starting to read Characteristics");
-                gatt.readCharacteristic(mCharacteristicsToRead.get(0));
+                gatt.readCharacteristic(mCharacteristicsLeftToRead.get(0));
             }
         }
     }
 
     private void logCharacteristic(BluetoothGattCharacteristic characteristic) {
-        List<BluetoothGattDescriptor> descriptors = characteristic.getDescriptors();
-        BluetoothGattDescriptor typeDescriptor = findTypeDescriptor(descriptors);
-        int format = getTypeFormat(typeDescriptor);
-    }
-
-    private int getTypeFormat(BluetoothGattDescriptor typeDescriptor) {
-        byte[] valueBytes = typeDescriptor.getValue();
-        //todo complete
-        return 0;
-    }
-
-    @Nullable
-    private BluetoothGattDescriptor findTypeDescriptor(List<BluetoothGattDescriptor> descriptors) {
-        UUID storedTypeUUID = UUID.fromString("29040000-0000-1000-8000-00805F9B34FB");
-        for (BluetoothGattDescriptor descriptor : descriptors) {
-            if (descriptor.getUuid().equals(storedTypeUUID)) {
-                return descriptor;
+        Log.i(TAG, "Characteristic UUID: " + characteristic.getUuid());
+        byte[] characteristicsValue = characteristic.getValue();
+        if (characteristicsValue != null) {
+            String valueInString = "";
+            for (byte currentValueByte : characteristicsValue) {
+                valueInString = valueInString + " " + Integer.toHexString(currentValueByte);
             }
-        }
 
-        return null;
-    }
-
-
-    private int determineFormatType(BluetoothGattCharacteristic characteristic) {
-        int properties = characteristic.getProperties();
-        int formatMask = createCharacteristicFormatMask();
-        return properties & formatMask;
-    }
-
-
-    private int createCharacteristicFormatMask() {
-        return BluetoothGattCharacteristic.FORMAT_FLOAT | BluetoothGattCharacteristic.FORMAT_SFLOAT
-                | BluetoothGattCharacteristic.FORMAT_SINT8 | BluetoothGattCharacteristic.FORMAT_SINT16 |
-                BluetoothGattCharacteristic.FORMAT_SINT32 | BluetoothGattCharacteristic.FORMAT_UINT8
-                | BluetoothGattCharacteristic.FORMAT_UINT16 | BluetoothGattCharacteristic.FORMAT_UINT32;
+            Log.i(TAG, "Characteristic value: " + valueInString);
+        } else
+            Log.e(TAG, "characteristic value is null");
     }
 
     @Override
@@ -192,21 +185,80 @@ class ServiceGATTCallback extends BluetoothGattCallback {
     @Override
     public void onDescriptorWrite(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
         Log.i(TAG, "Descriptor write finished!");
+        synchronized (mDescriptorsWritePending) {
+            mDescriptorsWritePending--;
+            if (mDescriptorsWritePending == 0) {
+                readNextCharacteristic(gatt);
+            }
+        }
     }
 
     public BluetoothGatt getGattForDevice(BluetoothDevice device) {
-        Log.i(TAG, "get services for device: " + device);
+        Log.i(TAG, "get gatt for device: " + device);
         return mDeviceGattMap.get(device);
     }
 
-    public void startReadingCharacteristics(BluetoothDevice device,
-                                            List<BluetoothGattCharacteristic> characteristics,
-                                            List<BluetoothGattDescriptor> descriptors) {
+    public void startReadingCharacteristics(@NonNull BluetoothDevice device,
+                                            @NonNull ArrayList<BluetoothGattCharacteristic> characteristics,
+                                            @NonNull ArrayList<BluetoothGattDescriptor> descriptors) {
+        Log.i(TAG, "Starting to read Characteristics of device: " + device.getName());
+        if (mReadingCharacteristicsInProgress) {
+            Log.d(TAG, "Reading Characteristics already in progress");
+            return;
+        }
 
-        mDescriptorsToRead = descriptors;
-        mCharacteristicsToRead = characteristics;
+        mReadingCharacteristicsInProgress = true;
+        mDescriptorsLeftToRead = (ArrayList<BluetoothGattDescriptor>) descriptors.clone();
+        mCharacteristicsLeftToRead = (ArrayList<BluetoothGattCharacteristic>) characteristics.clone();
+
+        Log.i(TAG, "descriptors size: " + descriptors.size() + " characteristics size: " + characteristics.size());
 
         BluetoothGatt gatt = getGattForDevice(device);
-        gatt.readDescriptor(descriptors.get(0));
+
+        if (!mNotificationsSet) {
+            for (BluetoothGattCharacteristic characteristic : mCharacteristicsLeftToRead) {
+                setNotifications(gatt, characteristic);
+            }
+            mNotificationsSet = true;
+        } else {
+            readNextCharacteristic(gatt);
+        }
+    }
+
+    private boolean readNextCharacteristic(BluetoothGatt gatt) {
+        while (!gatt.readCharacteristic(mCharacteristicsLeftToRead.get(0))) {
+            Log.i(TAG, "Reading characteristic : " + mCharacteristicsLeftToRead.get(0).getUuid().toString() +
+                    " failed!");
+
+            mCharacteristicsLeftToRead.remove(0);
+            if (mCharacteristicsLeftToRead.size() == 0) {
+                Log.d(TAG, "Unable to read any characteristic!");
+                return false;
+            }
+        }
+
+        mCharacteristicsLeftToRead.remove(0);
+        Log.i(TAG, "Characteristic read set properly");
+        return true;
+    }
+
+    private void setNotifications(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
+        boolean characteristicSetSuccessfully = gatt.setCharacteristicNotification(characteristic, true);
+        UUID uuid = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb");
+        BluetoothGattDescriptor descriptor = characteristic.getDescriptor(uuid);
+
+        if (descriptor != null && characteristicSetSuccessfully) {
+            descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
+            if (gatt.writeDescriptor(descriptor)) {
+                synchronized (mDescriptorsWritePending) {
+                    mDescriptorsWritePending++;
+                    Log.i(TAG, "descriptorsWithPendingWrites: " + mDescriptorsWritePending);
+                }
+            }
+            Log.i(TAG, "Characteristic notification set properly");
+        } else {
+            //this ain't error
+            Log.d(TAG, "Notification set failed!");
+        }
     }
 }

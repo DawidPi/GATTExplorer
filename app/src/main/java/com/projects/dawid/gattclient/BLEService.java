@@ -76,16 +76,8 @@ public class BLEService extends IntentService {
                     connectDevice(intent);
                     break;
 
-                case Requests.DISCONNECT:
-                    disconnectDevices();
-                    break;
-
                 case Requests.PERFORM_SERVICE_DISCOVERY:
                     discoverServices(intent);
-                    break;
-
-                case Requests.REGISTER_NOTIFICATIONS:
-                    startNotifications(intent);
                     break;
 
                 case Requests.READ_ALL_CHARACTERISTICS:
@@ -114,7 +106,6 @@ public class BLEService extends IntentService {
         ArrayList<BluetoothGattDescriptor> descriptors = prepareDescriptorsList(characteristics);
 
         mGATTCallback.startReadingCharacteristics(device, characteristics, descriptors);
-
     }
 
     private ArrayList<BluetoothGattCharacteristic> prepareCharacteristicsList(BluetoothGatt gatt) {
@@ -141,17 +132,6 @@ public class BLEService extends IntentService {
         return descriptors;
     }
 
-
-    private void startNotifications(Intent intent) {
-        //todo finish
-//        Log.i(TAG, "Registering notifications");
-//        BluetoothDevice device = intent.getParcelableExtra(Requests.DEVICE);
-//        BluetoothGatt gatt = mGATTCallback.getGattForDevice(device);
-//        device.
-//        for(BluetoothGattCharacteristic characteristic : gatt.)
-
-    }
-
     private void discoverServices(Intent intent) {
         Log.i(TAG, "Notifying about discovered services");
         BluetoothDevice device = intent.getParcelableExtra(Requests.DEVICE);
@@ -162,10 +142,6 @@ public class BLEService extends IntentService {
         } else {
             Log.e(TAG, "Gatt is null!");
         }
-    }
-
-    private void disconnectDevices() {
-        //todo implement
     }
 
     private void connectDevice(Intent intent) {

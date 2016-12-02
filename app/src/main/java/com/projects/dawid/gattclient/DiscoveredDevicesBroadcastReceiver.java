@@ -13,7 +13,7 @@ import java.util.HashMap;
 
 public class DiscoveredDevicesBroadcastReceiver extends BroadcastReceiver {
     public static IntentFilter ResponseIntentFilter = new IntentFilter(BLEService.RESPONSE);
-    private static String TAG = "Broadcast Receiver";
+    private static String TAG = "DiscoveredReceiver";
     private HashMap<String, BluetoothDevice> mBluetoothDevices = new HashMap<>();
     private ConnectedArrayAdapter mBluetoothDevicesAdapter;
     private Context mActivityContext;

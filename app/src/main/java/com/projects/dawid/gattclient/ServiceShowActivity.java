@@ -5,12 +5,13 @@ import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattService;
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.ExpandableListAdapter;
 import android.widget.ExpandableListView;
 import android.widget.SimpleExpandableListAdapter;
 
@@ -23,15 +24,15 @@ public class ServiceShowActivity extends AppCompatActivity {
 
     private static final String PREFIX = "com.GattClient.Pilarski.";
     public static final String DEVICE = PREFIX + "DEVICE";
-    public static final String SERVICE_LIST = PREFIX + "SERVICE_LIST";
     private static final String TAG = "SERVICE_ACTIVITY";
-    public static final String ACTION = TAG;
-    private static List<BluetoothGattService> mServices;
+    private static List<BluetoothGattService> mServices = new ArrayList<>();
+    private final List<List<Map<String, String>>> childrenData = new ArrayList<>();
+    private final List<Map<String, String>> groupData = new ArrayList<>();
     private BluetoothDevice mBluetoothDevice;
-    private ExpandableListAdapter mExpandableListAdapter;
+    private SimpleExpandableListAdapter mExpandableListAdapter;
+    private ServiceShowBroadcastReceiver mBroadcastReceiver;
 
-
-    public static void setServicesList(ArrayList<BluetoothGattService> services) {
+    public static void setServicesList(@NonNull ArrayList<BluetoothGattService> services) {
         mServices = services;
     }
 
@@ -42,17 +43,24 @@ public class ServiceShowActivity extends AppCompatActivity {
 
         setupActionBar();
         mBluetoothDevice = getIntent().getParcelableExtra(DEVICE);
+        setBroadcastReceiver();
 
         for (BluetoothGattService service :
                 mServices) {
             Log.i(TAG, "service: " + service.getUuid());
         }
 
-        askForReadingAllCharacteristics();
+        updateCharacteristicsValues();
         fillServicesView();
     }
 
-    private void askForReadingAllCharacteristics() {
+    private void setBroadcastReceiver() {
+        mBroadcastReceiver = new ServiceShowBroadcastReceiver(this);
+        LocalBroadcastManager.getInstance(this).registerReceiver(mBroadcastReceiver,
+                ServiceShowBroadcastReceiver.ResponseIntentFilter);
+    }
+
+    public void updateCharacteristicsValues() {
         Intent registerDeviceNotificationsIntent = new Intent(this, BLEService.class);
         registerDeviceNotificationsIntent.setAction(BLEService.REQUEST);
         registerDeviceNotificationsIntent.putExtra(BLEService.REQUEST, BLEService.Requests.READ_ALL_CHARACTERISTICS);
@@ -62,14 +70,15 @@ public class ServiceShowActivity extends AppCompatActivity {
 
     private void fillServicesView() {
         ExpandableListView listView = (ExpandableListView) findViewById(R.id.servicesView);
-        mExpandableListAdapter = prepareListAdapter();
+        mExpandableListAdapter = createAdapter();
+        updateCharacteristicsView();
         listView.setAdapter(mExpandableListAdapter);
     }
 
-    private ExpandableListAdapter prepareListAdapter() {
-        List<Map<String, String>> groupData = new ArrayList<>();
-        List<List<Map<String, String>>> childrenData = new ArrayList<>();
+    public void updateCharacteristicsView() {
         GATTUUIDTranslator translator = new GATTUUIDTranslator();
+        groupData.clear();
+        childrenData.clear();
 
         for (BluetoothGattService service : mServices) {
             Map<String, String> currentServices = new HashMap<>();
@@ -79,14 +88,31 @@ public class ServiceShowActivity extends AppCompatActivity {
             List<Map<String, String>> characteristics = new ArrayList<>();
             for (BluetoothGattCharacteristic characteristic : service.getCharacteristics()) {
                 Map<String, String> currentCharacteristicMap = new HashMap<>();
-                currentCharacteristicMap.put("NAME", translator.standardUUID(characteristic.getUuid()));
+                currentCharacteristicMap.put("NAME", translator.standardUUID(characteristic.getUuid())
+                        + ":\n" + valueToString(characteristic.getValue()));
                 logCharacteristic(characteristic);
-                //currentCharacteristicMap.put("NAME1", characteristic.getStringValue(0));
                 characteristics.add(currentCharacteristicMap);
             }
             childrenData.add(characteristics);
         }
 
+        mExpandableListAdapter.notifyDataSetChanged();
+    }
+
+    private String valueToString(byte[] value) {
+        if (value == null)
+            return "UNKNOWN";
+
+        String valueInString = "";
+        for (byte currentValueByte : value) {
+            valueInString = valueInString + " " + Integer.toHexString(currentValueByte);
+        }
+
+        return valueInString;
+    }
+
+    @NonNull
+    private SimpleExpandableListAdapter createAdapter() {
         SimpleExpandableListAdapter adapter = new SimpleExpandableListAdapter(this, groupData,
                 android.R.layout.simple_expandable_list_item_1, new String[]{"NAME"},
                 new int[]{android.R.id.text1}, childrenData, android.R.layout.simple_expandable_list_item_2,
