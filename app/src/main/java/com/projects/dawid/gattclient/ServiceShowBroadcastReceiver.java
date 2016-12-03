@@ -13,9 +13,8 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 /**
- * Created by Dawid on 21.11.2016.
+ * Broadcast Receiver for ServiceShowActivity.
  */
-
 public class ServiceShowBroadcastReceiver extends BroadcastReceiver {
     private static final String TAG = "ServiceShowReceiver";
     public static IntentFilter ResponseIntentFilter = new IntentFilter(BLEService.RESPONSE);

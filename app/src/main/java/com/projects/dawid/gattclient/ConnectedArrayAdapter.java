@@ -11,85 +11,57 @@ import android.widget.TextView;
 
 import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
-public class ConnectedArrayAdapter extends ArrayAdapter<BluetoothDeviceAdapter> {
+/**
+ * ConnectedArrayAdapter implements ListViewAdapter for discovered devices.
+ * Is capable to show which devices are connected and which ones are selected.
+ */
+class ConnectedArrayAdapter extends ArrayAdapter<BluetoothDeviceAdapter> {
     private static final String TAG = "ConnectedArrayAdapter";
     private HashSet<BluetoothDeviceAdapter> mConnectedDevices = new HashSet<>();
     private BluetoothDeviceAdapter mSelectedDevice;
     private Context mContext;
 
-    public ConnectedArrayAdapter(Context context, int resource) {
-        super(context, resource);
-        mContext = context;
-    }
-
-    public ConnectedArrayAdapter(Context context, int resource, BluetoothDeviceAdapter[] objects) {
+    /**
+     * Default constructor.
+     */
+    ConnectedArrayAdapter(Context context, int resource, List<BluetoothDeviceAdapter> objects) {
         super(context, resource, objects);
         mContext = context;
     }
 
-    public ConnectedArrayAdapter(Context context, int resource, int textViewResourceId, BluetoothDeviceAdapter[] objects) {
-        super(context, resource, textViewResourceId, objects);
-        mContext = context;
-    }
-
-    public ConnectedArrayAdapter(Context context, int resource, List<BluetoothDeviceAdapter> objects) {
-        super(context, resource, objects);
-        mContext = context;
-    }
-
-    public ConnectedArrayAdapter(Context context, int resource, int textViewResourceId, List<BluetoothDeviceAdapter> objects) {
-        super(context, resource, textViewResourceId, objects);
-        mContext = context;
-    }
-
-    public ConnectedArrayAdapter(Context context, int resource, int textViewResourceId) {
-        super(context, resource, textViewResourceId);
-        mContext = context;
-    }
-
-    public HashSet<BluetoothDeviceAdapter> getConnectedDevices() {
+    /**
+     * @return Set of all connected BLE devices.
+     */
+    HashSet<BluetoothDeviceAdapter> getConnectedDevices() {
         return mConnectedDevices;
     }
 
-    public void addConnectedDevice(BluetoothDeviceAdapter device) {
+    /**
+     * Adds BLE device to the collection of connected devices.
+     *
+     * @param device new connected device.
+     */
+    void addConnectedDevice(BluetoothDeviceAdapter device) {
         mConnectedDevices.add(device);
         logDevices();
     }
 
-    private void logDevices() {
-        Log.i(TAG, ">>> Devices <<<");
-        for (BluetoothDeviceAdapter device :
-                mConnectedDevices) {
-            Log.i(TAG, "Device:" + device.toString());
-        }
-    }
-
-    public void addConnectedDevices(Set<BluetoothDeviceAdapter> devices) {
-        mConnectedDevices.addAll(devices);
-    }
-
-    public void removeConnectedDevice(BluetoothDeviceAdapter device) {
-        mConnectedDevices.remove(device);
-    }
-
-    public BluetoothDeviceAdapter getSelectedDevice() {
-        return mSelectedDevice;
-    }
-
-    public void setSelectedDevice(BluetoothDeviceAdapter device) {
+    /**
+     * Sets selected device. Makes selected device highlighted.
+     *
+     * @param device device, that is to be highlighted.
+     */
+    void setSelectedDevice(BluetoothDeviceAdapter device) {
         mSelectedDevice = device;
     }
 
-    public void clearConnectedDevices() {
-        mConnectedDevices.clear();
-    }
-
+    /**
+     * Sets appropriate colors for background and text of selected and connected devices.
+     */
     @NonNull
     @Override
-    public View getView(int position, View convertView, ViewGroup parent) {
-        Log.i(TAG, "getView launched");
+    public View getView(int position, View convertView, @NonNull ViewGroup parent) {
 
         View view = super.getView(position, convertView, parent);
         TextView textView = (TextView) view.findViewById(android.R.id.text1);
@@ -101,6 +73,7 @@ public class ConnectedArrayAdapter extends ArrayAdapter<BluetoothDeviceAdapter> 
         return view;
     }
 
+
     private void setBackgroundColor(TextView textView, String textViewText) {
         textView.setBackgroundColor(ContextCompat.getColor(mContext, R.color.colorDefaultBackgroundDevice));
 
@@ -110,24 +83,26 @@ public class ConnectedArrayAdapter extends ArrayAdapter<BluetoothDeviceAdapter> 
     }
 
     private void setTextColor(TextView textView, String textViewText) {
-        if (deviceConnected(textViewText)) {
-            Log.i(TAG, "Device: " + textViewText + " is in connected devices set");
+        if (deviceConnected(textViewText))
             textView.setTextColor(ContextCompat.getColor(mContext, R.color.colorTextConnectedDevice));
-        } else {
-            Log.i(TAG, "Device: " + textViewText + " is NOT in connected devices set");
+        else
             textView.setTextColor(ContextCompat.getColor(mContext, R.color.colorTextDefaultDevice));
-        }
     }
 
     private boolean deviceConnected(String textViewText) {
-        //set.contains for some reason does not work
-        for (BluetoothDeviceAdapter device :
-                mConnectedDevices) {
-            if (textViewText.equals(device.toString())) {
+        for (BluetoothDeviceAdapter device : mConnectedDevices) {
+            if (textViewText.equals(device.toString()))
                 return true;
-            }
         }
 
         return false;
+    }
+
+    private void logDevices() {
+        Log.i(TAG, ">>> Devices <<<");
+        for (BluetoothDeviceAdapter device :
+                mConnectedDevices) {
+            Log.i(TAG, "Device:" + device.toString());
+        }
     }
 }

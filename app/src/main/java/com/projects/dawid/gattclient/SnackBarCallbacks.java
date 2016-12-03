@@ -8,12 +8,14 @@ import android.util.Log;
 import android.view.View;
 
 /**
- * Created by Dawid on 10.11.2016.
+ * Abstract class. A'la container for classes with callbacks for Snack's actions.
  */
+abstract class SnackBarCallbacks {
 
-public abstract class SnackBarCallbacks {
-
-    public static class DiscoverServicesCallback implements View.OnClickListener {
+    /**
+     * Callback for starting service discovery.
+     */
+    static class DiscoverServicesCallback implements View.OnClickListener {
         private final BluetoothDevice mDevice;
         private final Activity mActivity;
         private String TAG = "DiscoverServices";
@@ -34,7 +36,10 @@ public abstract class SnackBarCallbacks {
         }
     }
 
-    public static class ConnectDeviceCallback implements View.OnClickListener {
+    /**
+     * Callback for connecting device.
+     */
+    static class ConnectDeviceCallback implements View.OnClickListener {
         private final BluetoothDevice mDevice;
         private final Activity mActivity;
 
@@ -53,28 +58,10 @@ public abstract class SnackBarCallbacks {
         }
     }
 
-    public static class DisconnectDeviceCallback implements View.OnClickListener {
-        private final BluetoothDevice mDevice;
-        private final Activity mActivity;
-
-        DisconnectDeviceCallback(Activity activity, BluetoothDevice deviceToDiscoverServices) {
-            mActivity = activity;
-            mDevice = deviceToDiscoverServices;
-        }
-
-        @Override
-        public void onClick(View view) {
-            Intent intent = new Intent(mActivity, BLEService.class);
-            intent.setAction(BLEService.REQUEST);
-            intent.putExtra(BLEService.REQUEST, BLEService.Requests.DISCONNECT);
-            intent.putExtra(BLEService.Requests.DEVICE, mDevice);
-            mActivity.startService(intent);
-        }
-    }
-
-    public static class DismissCallback implements View.OnClickListener {
-
-
+    /**
+     * Callback for hiding Searching snack.
+     */
+    static class DismissCallback implements View.OnClickListener {
         private final Snackbar mSnackBar;
 
         DismissCallback(Snackbar snackbar) {

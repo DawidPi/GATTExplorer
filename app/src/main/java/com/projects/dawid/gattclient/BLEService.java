@@ -18,11 +18,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 
-/**
- * An {@link IntentService} subclass for handling asynchronous task requests in
- * a service on a separate handler thread.
- * <p>
- */
 public class BLEService extends IntentService {
 
     private static final String TAG = "BLEService";
@@ -169,8 +164,7 @@ public class BLEService extends IntentService {
         public static final int STOP_SCAN = 2;
         public static final int CONNECT_GATT = 3;
         public static final int DISCONNECT = 4;
-        public static final int REGISTER_NOTIFICATIONS = 5;
-        public static final int READ_ALL_CHARACTERISTICS = 6;
+        public static final int READ_ALL_CHARACTERISTICS = 5;
 
         public static final String DEVICE = PREFIX + "DEVICE";
     }

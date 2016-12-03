@@ -7,16 +7,37 @@ import android.util.SparseArray;
 import java.util.UUID;
 
 /**
- * Created by Dawid on 16.11.2016.
+ * Stores information about names of BLE Attributes taken from
+ * https://www.bluetooth.com/specifications/gatt
  */
-
-public class GATTUUIDTranslator {
+class GATTUUIDTranslator {
     private static final String UNKNOWN = "UNKNOWN";
     private static final String TAG = "UUID_TRANSLATOR";
     private SparseArray<String> mUUIDMap = new SparseArray<>();
 
+    /**
+     * Default constructor.
+     */
     GATTUUIDTranslator() {
         fillMap();
+    }
+
+    /**
+     * Translated BLE Attribute UUID to descriptive string.
+     *
+     * @param bluetoothUUID BLE Attribute UUID to be translated
+     * @return string with user-friendly name of UUID
+     */
+    @NonNull
+    public String standardUUID(@NonNull UUID bluetoothUUID) {
+
+        int standardUUID = prepareStandardUUIDValue(bluetoothUUID);
+
+        if (mUUIDMap.get(standardUUID) != null) {
+            return mUUIDMap.get(standardUUID);
+        }
+
+        return UNKNOWN;
     }
 
     private void fillMap() {
@@ -235,7 +256,6 @@ public class GATTUUIDTranslator {
     }
 
     private void fillServicesInfo() {
-        //information from https://www.bluetooth.com/specifications/gatt/services
         mUUIDMap.put(0x1811, "Alert Notification Service");
         mUUIDMap.put(0x1815, "Automation IO");
         mUUIDMap.put(0x180F, "Battery Service");
@@ -271,18 +291,6 @@ public class GATTUUIDTranslator {
         mUUIDMap.put(0x1804, "Tx Power");
         mUUIDMap.put(0x181C, "User Data");
         mUUIDMap.put(0x181D, "Weight Scale");
-    }
-
-    @NonNull
-    public String standardUUID(@NonNull UUID bluetoothUUID) {
-
-        int standardUUID = prepareStandardUUIDValue(bluetoothUUID);
-
-        if (mUUIDMap.get(standardUUID) != null) {
-            return mUUIDMap.get(standardUUID);
-        }
-
-        return UNKNOWN;
     }
 
     private int prepareStandardUUIDValue(@NonNull UUID bluetoothUUID) {

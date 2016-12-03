@@ -11,6 +11,9 @@ import android.util.Log;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+/**
+ * Receives and handles Responses from BLEService regarding device discovery and device connection.
+ */
 public class DiscoveredDevicesBroadcastReceiver extends BroadcastReceiver {
     public static IntentFilter ResponseIntentFilter = new IntentFilter(BLEService.RESPONSE);
     private static String TAG = "DiscoveredReceiver";

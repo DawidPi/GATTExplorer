@@ -5,8 +5,6 @@ import android.bluetooth.BluetoothManager;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
-import android.support.design.widget.Snackbar;
-import android.support.v4.content.ContextCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
@@ -17,10 +15,12 @@ import android.widget.Toast;
 
 import java.util.ArrayList;
 
+/**
+ * Activity for showing devices discoverable nearby and managing connections.
+ */
 public class DiscoveredDevicesActivity extends AppCompatActivity {
 
     private final static int BLE_ENABLED = 1;
-    private final String TAG = "ACTIVITY";
     private BluetoothAdapter mBluetoothAdapter;
     private ConnectedArrayAdapter mBluetoothListAdapter;
     private ArrayList<BluetoothDeviceAdapter> mBLEDevices = new ArrayList<>();
@@ -29,23 +29,29 @@ public class DiscoveredDevicesActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        prepareActivity();
+        initializeMembers();
+
+        restartDeviceScan();
+    }
+
+    private void initializeMembers() {
+        setListView();
+        initializeBluetoothAdapter();
+        setBroadcastReceiver();
+    }
+
+    private void prepareActivity() {
         setContentView(R.layout.activity_discovered_devices);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-
-        setListView();
-        updateBluetoothHelpers();
-        setBroadcastReceiver();
-
-        clearDevices();
-        requestNewScan();
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         if (item.getItemId() == R.id.bluetoothDiscover) {
-            clearDevices();
-            requestNewScan();
+            restartDeviceScan();
         }
 
         return super.onOptionsItemSelected(item);
@@ -64,7 +70,7 @@ public class DiscoveredDevicesActivity extends AppCompatActivity {
                 DiscoveredDevicesBroadcastReceiver.ResponseIntentFilter);
     }
 
-    private void updateBluetoothHelpers() {
+    private void initializeBluetoothAdapter() {
         mBluetoothAdapter = ((BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE)).getAdapter();
     }
 
@@ -72,13 +78,13 @@ public class DiscoveredDevicesActivity extends AppCompatActivity {
         final ListView listView = (ListView)findViewById(R.id.BluetoothDevicesViewId);
         mBluetoothListAdapter = new ConnectedArrayAdapter(this, android.R.layout.simple_list_item_1, mBLEDevices);
         listView.setAdapter(mBluetoothListAdapter);
-        listView.setOnItemClickListener(new ItemSelectedAction(this, this, mBluetoothListAdapter.getConnectedDevices()));
+        listView.setOnItemClickListener(new ItemSelectedAction(this, mBluetoothListAdapter.getConnectedDevices()));
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if(requestCode == BLE_ENABLED && resultCode == RESULT_OK){
-            clearDevices();
+            restartDeviceScan();
         }
         else{
             Toast.makeText(this, R.string.BLUETOOTH_NOT_ENABLED, Toast.LENGTH_SHORT).show();
@@ -86,7 +92,7 @@ public class DiscoveredDevicesActivity extends AppCompatActivity {
         super.onActivityResult(requestCode, resultCode, data);
     }
 
-    private void clearDevices() {
+    private void restartDeviceScan() {
         clearLocalDevices();
         requestNewScan();
         mBroadcastReceiver.clearCachedDevices();
@@ -99,12 +105,8 @@ public class DiscoveredDevicesActivity extends AppCompatActivity {
     }
 
     private void showSearchingSnackBar() {
-        Snackbar snackbar = Snackbar.make(findViewById(android.R.id.content),
-                R.string.SnackbarSearchingForDevices, Snackbar.LENGTH_INDEFINITE);
-
-        snackbar.setAction(R.string.SnackbarSearchingForDevicesAction, new SnackBarCallbacks.DismissCallback(snackbar));
-        snackbar.setActionTextColor(ContextCompat.getColor(this, R.color.colorDeviceSearchSnackbarAction));
-        snackbar.show();
+        final SnackBarManager snack = new SnackBarManager(this);
+        snack.showSearching();
     }
 
     private void startNewScan() {
@@ -135,24 +137,5 @@ public class DiscoveredDevicesActivity extends AppCompatActivity {
     private void clearLocalDevices() {
         mBLEDevices.clear();
         mBluetoothListAdapter.clear();
-
     }
-
-    private void disconnectDevices() {
-        Intent intent = new Intent(this, BLEService.class);
-        intent.setAction(BLEService.REQUEST);
-        intent.putExtra(BLEService.REQUEST, BLEService.Requests.DISCONNECT);
-        startService(intent);
-    }
-
-    @Override
-    protected void onPause() {
-        //disconnectDevices();
-        //clearDevices();
-        //Intent serviceIntent = new Intent(this, BLEService.class);
-        //should I stop the service?
-
-        super.onPause();
-    }
-
 }

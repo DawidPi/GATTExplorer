@@ -7,6 +7,10 @@ import android.util.Log;
 
 import java.io.Serializable;
 
+/**
+ * BluetoothDeviceAdapter class created for Default ListAdapter, so that Devices are displayed
+ * in desired way.
+ */
 class BluetoothDeviceAdapter implements Parcelable, Serializable {
     public static final Creator<BluetoothDeviceAdapter> CREATOR = new Creator<BluetoothDeviceAdapter>() {
         @Override
@@ -22,14 +26,23 @@ class BluetoothDeviceAdapter implements Parcelable, Serializable {
     private static final String TAG = "BluetoothDeviceAdapter";
     private BluetoothDevice mBluetoothDevice;
 
+    /**
+     * Default constructor.
+     *
+     * @param device reference for device, for which representation text is to be created
+     */
     BluetoothDeviceAdapter(BluetoothDevice device){
         mBluetoothDevice = device;
     }
 
-    protected BluetoothDeviceAdapter(Parcel in) {
+    private BluetoothDeviceAdapter(Parcel in) {
         mBluetoothDevice = in.readParcelable(BluetoothDevice.class.getClassLoader());
     }
 
+    /**
+     * toString returns the way, the device is to be displayed on a device discovery view.
+     * @return String with proper values.
+     */
     public String toString(){
         return mBluetoothDevice.getName() + " : " + mBluetoothDevice.getAddress();
     }
