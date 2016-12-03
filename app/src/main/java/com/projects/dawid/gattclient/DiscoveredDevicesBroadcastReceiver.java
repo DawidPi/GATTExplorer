@@ -59,6 +59,7 @@ public class DiscoveredDevicesBroadcastReceiver extends BroadcastReceiver {
                 break;
 
             case BLEService.Responses.SERVICES_DISCOVERED:
+                stopCurrentScan();
                 createViewWithServices(intent);
                 break;
 
@@ -69,6 +70,14 @@ public class DiscoveredDevicesBroadcastReceiver extends BroadcastReceiver {
                 Log.d(TAG, "Response type unknown");
         }
 
+    }
+
+    private void stopCurrentScan() {
+        Intent stopScanIntent = new Intent(mActivityContext, BLEService.class);
+        stopScanIntent.setAction(BLEService.REQUEST);
+        stopScanIntent.putExtra(BLEService.REQUEST, BLEService.Requests.STOP_SCAN);
+
+        mActivityContext.startService(stopScanIntent);
     }
 
     private void createViewWithServices(Intent intent) {
