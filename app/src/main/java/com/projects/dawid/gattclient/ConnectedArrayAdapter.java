@@ -3,7 +3,6 @@ package com.projects.dawid.gattclient;
 import android.content.Context;
 import android.support.annotation.NonNull;
 import android.support.v4.content.ContextCompat;
-import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
@@ -44,7 +43,6 @@ class ConnectedArrayAdapter extends ArrayAdapter<BluetoothDeviceAdapter> {
      */
     void addConnectedDevice(BluetoothDeviceAdapter device) {
         mConnectedDevices.add(device);
-        logDevices();
     }
 
     /**
@@ -98,11 +96,4 @@ class ConnectedArrayAdapter extends ArrayAdapter<BluetoothDeviceAdapter> {
         return false;
     }
 
-    private void logDevices() {
-        Log.i(TAG, ">>> Devices <<<");
-        for (BluetoothDeviceAdapter device :
-                mConnectedDevices) {
-            Log.i(TAG, "Device:" + device.toString());
-        }
-    }
 }

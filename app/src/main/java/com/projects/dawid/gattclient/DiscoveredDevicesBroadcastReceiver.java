@@ -59,7 +59,7 @@ public class DiscoveredDevicesBroadcastReceiver extends BroadcastReceiver {
                 break;
 
             case BLEService.Responses.SERVICES_DISCOVERED:
-                stopCurrentScan();
+                BLEServiceStarter.stopLEScan(mActivityContext);
                 createViewWithServices(intent);
                 break;
 
@@ -70,14 +70,6 @@ public class DiscoveredDevicesBroadcastReceiver extends BroadcastReceiver {
                 Log.d(TAG, "Response type unknown");
         }
 
-    }
-
-    private void stopCurrentScan() {
-        Intent stopScanIntent = new Intent(mActivityContext, BLEService.class);
-        stopScanIntent.setAction(BLEService.REQUEST);
-        stopScanIntent.putExtra(BLEService.REQUEST, BLEService.Requests.STOP_SCAN);
-
-        mActivityContext.startService(stopScanIntent);
     }
 
     private void createViewWithServices(Intent intent) {
@@ -121,9 +113,14 @@ public class DiscoveredDevicesBroadcastReceiver extends BroadcastReceiver {
             return;
         }
 
+        addFilteredDevice(newDevice);
+    }
+
+    private void addFilteredDevice(BluetoothDevice newDevice) {
         // some devices tend to change their address, but leave device name
         // this is used to update values in Map, but not to modify
         // user's view
+
         if (!mBluetoothDevices.containsValue(newDevice)) {
             if (!mBluetoothDevices.containsKey(newDevice.getName())) {
                 addNewDevice(newDevice);

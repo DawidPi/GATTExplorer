@@ -50,11 +50,7 @@ abstract class SnackBarCallbacks {
 
         @Override
         public void onClick(View view) {
-            Intent intent = new Intent(mActivity, BLEService.class);
-            intent.setAction(BLEService.REQUEST);
-            intent.putExtra(BLEService.REQUEST, BLEService.Requests.CONNECT_GATT);
-            intent.putExtra(BLEService.Requests.DEVICE, mDevice);
-            mActivity.startService(intent);
+            BLEServiceStarter.connectDevice(mActivity, mDevice);
         }
     }
 

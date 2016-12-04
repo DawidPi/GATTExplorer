@@ -100,7 +100,7 @@ public class DiscoveredDevicesActivity extends AppCompatActivity {
 
     private void requestNewScan() {
         showSearchingSnackBar();
-        stopCurrentScan();
+        BLEServiceStarter.stopLEScan(this);
         startNewScan();
     }
 
@@ -112,10 +112,7 @@ public class DiscoveredDevicesActivity extends AppCompatActivity {
     private void startNewScan() {
         if (activateBluetooth()) return;
 
-        Intent newScanRequest = new Intent(this, BLEService.class);
-        newScanRequest.setAction(BLEService.REQUEST);
-        newScanRequest.putExtra(BLEService.REQUEST, BLEService.Requests.PERFORM_SCAN);
-        startService(newScanRequest);
+        BLEServiceStarter.startLEScan(this);
     }
 
     private boolean activateBluetooth() {
@@ -125,13 +122,6 @@ public class DiscoveredDevicesActivity extends AppCompatActivity {
             return true;
         }
         return false;
-    }
-
-    private void stopCurrentScan() {
-        Intent stopScanRequest = new Intent(this, BLEService.class);
-        stopScanRequest.setAction(BLEService.REQUEST);
-        stopScanRequest.putExtra(BLEService.REQUEST, BLEService.Requests.STOP_SCAN);
-        startService(stopScanRequest);
     }
 
     private void clearLocalDevices() {

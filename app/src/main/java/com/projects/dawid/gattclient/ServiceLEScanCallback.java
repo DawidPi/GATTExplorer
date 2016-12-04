@@ -20,13 +20,12 @@ class ServiceLEScanCallback extends ScanCallback {
 
     @Override
     public void onScanResult(int callbackType, ScanResult result) {
-        Intent deviceFoundResponseIntent = createDeviceIntent(result.getDevice());
-
+        Intent deviceFoundResponseIntent = createDeviceFoundIntent(result.getDevice());
         LocalBroadcastManager.getInstance(mContext).sendBroadcast(deviceFoundResponseIntent);
     }
 
     @NonNull
-    private Intent createDeviceIntent(BluetoothDevice device) {
+    private Intent createDeviceFoundIntent(BluetoothDevice device) {
         Intent deviceFoundResponseIntent = new Intent();
         deviceFoundResponseIntent.setAction(BLEService.RESPONSE);
         deviceFoundResponseIntent.putExtra(BLEService.RESPONSE, BLEService.Responses.DEVICE_FOUND);
