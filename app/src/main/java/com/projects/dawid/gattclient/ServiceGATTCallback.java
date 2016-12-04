@@ -15,9 +15,7 @@ import android.util.Log;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 
 // issue occured, when I realized, that Intent service is killed after
@@ -29,13 +27,11 @@ import java.util.UUID;
  */
 class ServiceGATTCallback extends BluetoothGattCallback {
     private static ServiceGATTCallback staticCallback;
-    private final Object mLock = new Object();
     private Context mServiceContext;
     private String TAG = "GATT CALLBACK";
+    private NotificationsEnabler mNotificationsManager = new NotificationsEnabler();
+    private DeviceCharacteristicsReader mCharacteristicsUpdater = new DeviceCharacteristicsReader();
     private Map<BluetoothDevice, BluetoothGatt> mDeviceGattMap = new HashMap<>();
-    private List<BluetoothGattCharacteristic> mCharacteristicsLeftToRead;
-    private List<BluetoothGattDescriptor> mDescriptorsLeftToRead;
-    private Integer mDescriptorsWritePending = 0;
     private boolean mNotificationsSet = false;
     private boolean mReadingCharacteristicsInProgress = false;
 
@@ -53,10 +49,6 @@ class ServiceGATTCallback extends BluetoothGattCallback {
 
     @Override
     public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
-        if(status == BluetoothGatt.GATT_SUCCESS){
-            Log.i(TAG, "Success");
-        }
-
         if(newState == BluetoothProfile.STATE_CONNECTED){
             Log.i(TAG, "Bluetooth device connected");
             mDeviceGattMap.put(gatt.getDevice(), gatt);
@@ -108,26 +100,21 @@ class ServiceGATTCallback extends BluetoothGattCallback {
 
     @Override
     public void onCharacteristicRead(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
-        Log.i(TAG, "Characteristics left: " + mDescriptorsLeftToRead.size());
-
         logCharacteristic(characteristic);
 
-        if (mCharacteristicsLeftToRead.size() > 0) {
-            Log.i(TAG, "Reading next characteristic.");
-            if (!readNextCharacteristic(gatt)) {
-                finishReadingCharacteristics(gatt);
-            }
-        } else {
+        boolean noCharacteristicsLeft = !mCharacteristicsUpdater.onCharacteristicRead();
+
+        Log.i(TAG, "Characteristics read finished : " + noCharacteristicsLeft);
+        if (noCharacteristicsLeft) {
+            Log.i(TAG, "Updating characteristics view");
             finishReadingCharacteristics(gatt);
         }
+
     }
 
     private void finishReadingCharacteristics(BluetoothGatt gatt) {
         Log.i(TAG, "No characteristics left to read.");
         notifyReadingFinished(gatt);
-        mCharacteristicsLeftToRead = null;
-
-        Log.i(TAG, "Reading device finished!");
     }
 
     private void notifyReadingFinished(BluetoothGatt gatt) {
@@ -145,35 +132,15 @@ class ServiceGATTCallback extends BluetoothGattCallback {
 
     @Override
     public void onDescriptorRead(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
-        mDescriptorsLeftToRead.remove(0);
-        Log.i(TAG, "Descriptors left: " + mDescriptorsLeftToRead.size());
-
-        if (mDescriptorsLeftToRead.size() > 0) {
-            Log.i(TAG, "Reading next descriptor.");
-            gatt.readDescriptor(mDescriptorsLeftToRead.get(0));
-        } else {
-            Log.i(TAG, "No descriptors left to read.");
-            mDescriptorsLeftToRead = null;
-
-            if (mCharacteristicsLeftToRead != null) {
-                Log.i(TAG, "starting to read Characteristics");
-                gatt.readCharacteristic(mCharacteristicsLeftToRead.get(0));
-            }
-        }
+        Log.e(TAG, "Not implemented");
     }
 
     private void logCharacteristic(BluetoothGattCharacteristic characteristic) {
         Log.i(TAG, "Characteristic UUID: " + characteristic.getUuid());
         byte[] characteristicsValue = characteristic.getValue();
-        if (characteristicsValue != null) {
-            String valueInString = "";
-            for (byte currentValueByte : characteristicsValue) {
-                valueInString = valueInString + " " + Integer.toHexString(currentValueByte);
-            }
 
-            Log.i(TAG, "Characteristic value: " + valueInString);
-        } else
-            Log.e(TAG, "characteristic value is null");
+        Log.i(TAG, "Value of the characteristic: " +
+                CharacteristicValueRepresentation.translateToString(characteristicsValue));
     }
 
     @Override
@@ -188,12 +155,9 @@ class ServiceGATTCallback extends BluetoothGattCallback {
 
     @Override
     public void onDescriptorWrite(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
-        Log.i(TAG, "Descriptor write finished!");
-        synchronized (mLock) {
-            mDescriptorsWritePending--;
-            if (mDescriptorsWritePending == 0) {
-                readNextCharacteristic(gatt);
-            }
+        Log.i(TAG, "Descriptor write finished successfully");
+        if (!mNotificationsManager.onDescriptorWriteFinished()) {
+            mCharacteristicsUpdater.start(gatt);
         }
     }
 
@@ -212,57 +176,19 @@ class ServiceGATTCallback extends BluetoothGattCallback {
         }
 
         mReadingCharacteristicsInProgress = true;
-        mDescriptorsLeftToRead = (ArrayList<BluetoothGattDescriptor>) descriptors.clone();
-        mCharacteristicsLeftToRead = (ArrayList<BluetoothGattCharacteristic>) characteristics.clone();
+
 
         Log.i(TAG, "descriptors size: " + descriptors.size() + " characteristics size: " + characteristics.size());
 
         BluetoothGatt gatt = getGattForDevice(device);
-
         if (!mNotificationsSet) {
-            for (BluetoothGattCharacteristic characteristic : mCharacteristicsLeftToRead) {
-                setNotifications(gatt, characteristic);
-            }
+            mNotificationsManager.appendCharacteristics(characteristics);
+            mCharacteristicsUpdater.appendCharacteristics(characteristics);
+            mNotificationsManager.start(gatt);
             mNotificationsSet = true;
         } else {
-            readNextCharacteristic(gatt);
-        }
-    }
-
-    private boolean readNextCharacteristic(BluetoothGatt gatt) {
-        while (!gatt.readCharacteristic(mCharacteristicsLeftToRead.get(0))) {
-            Log.i(TAG, "Reading characteristic : " + mCharacteristicsLeftToRead.get(0).getUuid().toString() +
-                    " failed!");
-
-            mCharacteristicsLeftToRead.remove(0);
-            if (mCharacteristicsLeftToRead.size() == 0) {
-                Log.d(TAG, "Unable to read any characteristic!");
-                return false;
-            }
-        }
-
-        mCharacteristicsLeftToRead.remove(0);
-        Log.i(TAG, "Characteristic read set properly");
-        return true;
-    }
-
-    private void setNotifications(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
-        boolean characteristicSetSuccessfully = gatt.setCharacteristicNotification(characteristic, true);
-        UUID uuid = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb");
-        BluetoothGattDescriptor descriptor = characteristic.getDescriptor(uuid);
-
-        if (descriptor != null && characteristicSetSuccessfully) {
-            descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
-            if (gatt.writeDescriptor(descriptor)) {
-                synchronized (mLock) {
-                    mDescriptorsWritePending++;
-                    Log.i(TAG, "descriptorsWithPendingWrites: " + mDescriptorsWritePending);
-                }
-            }
-            Log.i(TAG, "Characteristic notification set properly");
-        } else {
-            //this ain't error
-            Log.d(TAG, "Notification set failed!");
+            mCharacteristicsUpdater.appendCharacteristics(characteristics);
+            mCharacteristicsUpdater.start(gatt);
         }
     }
 }
