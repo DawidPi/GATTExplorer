@@ -24,8 +24,12 @@ import java.util.UUID;
 // every finished intent. This is why I need to have this callback saved, to be
 // univarsal. Proper solution would be to save Callback to some persistent place
 
+/**
+ * Callback for all the GATT events.
+ */
 class ServiceGATTCallback extends BluetoothGattCallback {
     private static ServiceGATTCallback staticCallback;
+    private final Object mLock = new Object();
     private Context mServiceContext;
     private String TAG = "GATT CALLBACK";
     private Map<BluetoothDevice, BluetoothGatt> mDeviceGattMap = new HashMap<>();
@@ -185,7 +189,7 @@ class ServiceGATTCallback extends BluetoothGattCallback {
     @Override
     public void onDescriptorWrite(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
         Log.i(TAG, "Descriptor write finished!");
-        synchronized (mDescriptorsWritePending) {
+        synchronized (mLock) {
             mDescriptorsWritePending--;
             if (mDescriptorsWritePending == 0) {
                 readNextCharacteristic(gatt);
@@ -193,14 +197,14 @@ class ServiceGATTCallback extends BluetoothGattCallback {
         }
     }
 
-    public BluetoothGatt getGattForDevice(BluetoothDevice device) {
+    BluetoothGatt getGattForDevice(BluetoothDevice device) {
         Log.i(TAG, "get gatt for device: " + device);
         return mDeviceGattMap.get(device);
     }
 
-    public void startReadingCharacteristics(@NonNull BluetoothDevice device,
-                                            @NonNull ArrayList<BluetoothGattCharacteristic> characteristics,
-                                            @NonNull ArrayList<BluetoothGattDescriptor> descriptors) {
+    void startReadingCharacteristics(@NonNull BluetoothDevice device,
+                                     @NonNull ArrayList<BluetoothGattCharacteristic> characteristics,
+                                     @NonNull ArrayList<BluetoothGattDescriptor> descriptors) {
         Log.i(TAG, "Starting to read Characteristics of device: " + device.getName());
         if (mReadingCharacteristicsInProgress) {
             Log.d(TAG, "Reading Characteristics already in progress");
@@ -250,7 +254,7 @@ class ServiceGATTCallback extends BluetoothGattCallback {
         if (descriptor != null && characteristicSetSuccessfully) {
             descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
             if (gatt.writeDescriptor(descriptor)) {
-                synchronized (mDescriptorsWritePending) {
+                synchronized (mLock) {
                     mDescriptorsWritePending++;
                     Log.i(TAG, "descriptorsWithPendingWrites: " + mDescriptorsWritePending);
                 }

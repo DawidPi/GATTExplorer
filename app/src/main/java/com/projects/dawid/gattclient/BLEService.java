@@ -17,7 +17,35 @@ import android.util.Log;
 import java.util.ArrayList;
 import java.util.List;
 
-
+/**
+ * IntentService, that handles Bluetooth LE action for the views.
+ * <p>
+ * <h>Intent Service for Bluetooth Low energy asynchronous actions</h>
+ * <p>
+ * <p>This intent service is responsible for handling all low-level BLE actions for the view.</p>
+ * <p>
+ * <p>Intent, that start this IntentService must have action of BLEService.REQUEST</p>
+ * <p>Possible values of requests are:
+ * <ul>
+ * <li>PERFORM_SERVICE_DISCOVERY</li>
+ * <li>PERFORM_SCAN</li>
+ * <li>STOP_SCAN</li>
+ * <li>CONNECT_GATT</li>
+ * <li>DISCONNECT</li>
+ * <li>READ_ALL_CHARACTERISTICS</li>
+ * </ul>
+ * <p>
+ * Kind of request must be given as extra like
+ * intent.putExtra(BLEService.REQUEST, BLEService.Requests.REQUEST_TYPE);
+ * <p>
+ * Some of requests require Additional parameters like BLE device. Dor this we put Extra like this:
+ * intent.putExtra(BLEService.Requests.DEVICE, bleDevice);
+ * </p>
+ * <p>
+ * <p>Responses from BLEService have action of BLEService.RESPONSE</p>
+ * <p>
+ * <p>Tyle of response correspond to the type of request</p>
+ */
 public class BLEService extends IntentService {
 
     private static final String TAG = "BLEService";
@@ -159,25 +187,25 @@ public class BLEService extends IntentService {
     }
 
     public static final class Requests {
-        public static final int PERFORM_SERVICE_DISCOVERY = 0;
-        public static final int PERFORM_SCAN = 1;
-        public static final int STOP_SCAN = 2;
-        public static final int CONNECT_GATT = 3;
-        public static final int DISCONNECT = 4;
-        public static final int READ_ALL_CHARACTERISTICS = 5;
+        static final int PERFORM_SERVICE_DISCOVERY = 0;
+        static final int PERFORM_SCAN = 1;
+        static final int STOP_SCAN = 2;
+        static final int CONNECT_GATT = 3;
+        static final int DISCONNECT = 4;
+        static final int READ_ALL_CHARACTERISTICS = 5;
 
-        public static final String DEVICE = PREFIX + "DEVICE";
+        static final String DEVICE = PREFIX + "DEVICE";
     }
 
     public static final class Responses {
-        public static final int DEVICE_FOUND = 0;
-        public static final int CONNECTION_SUCCESSFUL = 1;
-        public static final int SCAN_FINISHED = 2;
-        public static final int CONNECTION_LOST = 3;
-        public static final int SERVICES_DISCOVERED = 4;
-        public static final int READ_ALL_CHARACTERISTICS = Requests.READ_ALL_CHARACTERISTICS;
+        static final int DEVICE_FOUND = 0;
+        static final int CONNECTION_SUCCESSFUL = 1;
+        static final int SCAN_FINISHED = 2;
+        static final int CONNECTION_LOST = 3;
+        static final int SERVICES_DISCOVERED = 4;
+        static final int READ_ALL_CHARACTERISTICS = Requests.READ_ALL_CHARACTERISTICS;
 
-        public static final String DEVICE = Requests.DEVICE;
-        public static final String SERVICES_LIST = PREFIX + "SERVICES";
+        static final String DEVICE = Requests.DEVICE;
+        static final String SERVICES_LIST = PREFIX + "SERVICES";
     }
 }

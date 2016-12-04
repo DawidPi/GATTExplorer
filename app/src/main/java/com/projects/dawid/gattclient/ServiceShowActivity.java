@@ -20,6 +20,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Activity for displaying and managing services and it's
+ * characteristics on one BLE device.
+ */
 public class ServiceShowActivity extends AppCompatActivity {
 
     private static final String PREFIX = "com.GattClient.Pilarski.";
@@ -32,6 +36,11 @@ public class ServiceShowActivity extends AppCompatActivity {
     private SimpleExpandableListAdapter mExpandableListAdapter;
     private ServiceShowBroadcastReceiver mBroadcastReceiver;
 
+    /**
+     * Sets services lists as services, that should be displayed
+     *
+     * @param services ArrayList of services, that are to be displayed.
+     */
     public static void setServicesList(@NonNull ArrayList<BluetoothGattService> services) {
         mServices = services;
     }
@@ -60,6 +69,9 @@ public class ServiceShowActivity extends AppCompatActivity {
                 ServiceShowBroadcastReceiver.ResponseIntentFilter);
     }
 
+    /**
+     * Starts request for refreshing characteristics Values.
+     */
     public void updateCharacteristicsValues() {
         Intent registerDeviceNotificationsIntent = new Intent(this, BLEService.class);
         registerDeviceNotificationsIntent.setAction(BLEService.REQUEST);
@@ -75,6 +87,9 @@ public class ServiceShowActivity extends AppCompatActivity {
         listView.setAdapter(mExpandableListAdapter);
     }
 
+    /**
+     * Updates view with Characteristics value.
+     */
     public void updateCharacteristicsView() {
         GATTUUIDTranslator translator = new GATTUUIDTranslator();
         groupData.clear();

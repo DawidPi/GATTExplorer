@@ -8,11 +8,14 @@ import android.widget.AdapterView;
 
 import java.util.Set;
 
-class ItemSelectedAction implements AdapterView.OnItemClickListener {
+/**
+ * Callback for clicking device on Discovered devices View.
+ */
+class DeviceSelectedAction implements AdapterView.OnItemClickListener {
     private final Activity mActivity;
     private final Set<BluetoothDeviceAdapter> mConnectedDevices;
 
-    ItemSelectedAction(Activity view, Set<BluetoothDeviceAdapter> connectedDevices) {
+    DeviceSelectedAction(Activity view, Set<BluetoothDeviceAdapter> connectedDevices) {
         mActivity = view;
         mConnectedDevices = connectedDevices;
     }

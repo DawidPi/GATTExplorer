@@ -78,7 +78,7 @@ public class DiscoveredDevicesActivity extends AppCompatActivity {
         final ListView listView = (ListView)findViewById(R.id.BluetoothDevicesViewId);
         mBluetoothListAdapter = new ConnectedArrayAdapter(this, android.R.layout.simple_list_item_1, mBLEDevices);
         listView.setAdapter(mBluetoothListAdapter);
-        listView.setOnItemClickListener(new ItemSelectedAction(this, mBluetoothListAdapter.getConnectedDevices()));
+        listView.setOnItemClickListener(new DeviceSelectedAction(this, mBluetoothListAdapter.getConnectedDevices()));
     }
 
     @Override

@@ -29,7 +29,7 @@ class GATTUUIDTranslator {
      * @return string with user-friendly name of UUID
      */
     @NonNull
-    public String standardUUID(@NonNull UUID bluetoothUUID) {
+    String standardUUID(@NonNull UUID bluetoothUUID) {
 
         int standardUUID = prepareStandardUUIDValue(bluetoothUUID);
 

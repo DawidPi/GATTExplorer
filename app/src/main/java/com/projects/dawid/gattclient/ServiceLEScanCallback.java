@@ -8,7 +8,10 @@ import android.content.Intent;
 import android.support.annotation.NonNull;
 import android.support.v4.content.LocalBroadcastManager;
 
-public class ServiceLEScanCallback extends ScanCallback {
+/**
+ * Callback for LEScan.
+ */
+class ServiceLEScanCallback extends ScanCallback {
     private Context mContext;
 
     ServiceLEScanCallback(Context context) {
