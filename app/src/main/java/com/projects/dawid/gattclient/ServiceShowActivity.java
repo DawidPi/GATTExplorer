@@ -6,6 +6,7 @@ import android.bluetooth.BluetoothGattService;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
@@ -30,8 +31,8 @@ public class ServiceShowActivity extends AppCompatActivity {
     public static final String DEVICE = PREFIX + "DEVICE";
     private static final String TAG = "SERVICE_ACTIVITY";
     private static List<BluetoothGattService> mServices = new ArrayList<>();
-    private final List<List<Map<String, String>>> childrenData = new ArrayList<>();
-    private final List<Map<String, String>> groupData = new ArrayList<>();
+    private final List<List<Map<String, String>>> mChildrenData = new ArrayList<>();
+    private final List<Map<String, String>> mGroupData = new ArrayList<>();
     private BluetoothDevice mBluetoothDevice;
     private SimpleExpandableListAdapter mExpandableListAdapter;
     private ServiceShowBroadcastReceiver mBroadcastReceiver;
@@ -41,7 +42,7 @@ public class ServiceShowActivity extends AppCompatActivity {
      *
      * @param services ArrayList of services, that are to be displayed.
      */
-    public static void setServicesList(@NonNull ArrayList<BluetoothGattService> services) {
+    public static void setServicesList(@NonNull List<BluetoothGattService> services) {
         mServices = services;
     }
 
@@ -51,7 +52,13 @@ public class ServiceShowActivity extends AppCompatActivity {
         setContentView(R.layout.activity_service_show);
 
         setupActionBar();
+
+        Log.i(TAG, "onCreate!");
+
         mBluetoothDevice = getIntent().getParcelableExtra(DEVICE);
+        if (mBluetoothDevice == null)
+            Log.e(TAG, "Bluetooth device is null!");
+
         setBroadcastReceiver();
 
         for (BluetoothGattService service :
@@ -64,6 +71,7 @@ public class ServiceShowActivity extends AppCompatActivity {
     }
 
     private void setBroadcastReceiver() {
+        Log.i(TAG, "starting broadcastReceiver");
         mBroadcastReceiver = new ServiceShowBroadcastReceiver(this);
         LocalBroadcastManager.getInstance(this).registerReceiver(mBroadcastReceiver,
                 ServiceShowBroadcastReceiver.ResponseIntentFilter);
@@ -73,6 +81,7 @@ public class ServiceShowActivity extends AppCompatActivity {
      * Starts request for refreshing characteristics Values.
      */
     public void updateCharacteristicsValues() {
+        Log.i(TAG, "CharacteristicsValues intent!");
         Intent registerDeviceNotificationsIntent = new Intent(this, BLEService.class);
         registerDeviceNotificationsIntent.setAction(BLEService.REQUEST);
         registerDeviceNotificationsIntent.putExtra(BLEService.REQUEST, BLEService.Requests.READ_ALL_CHARACTERISTICS);
@@ -81,6 +90,7 @@ public class ServiceShowActivity extends AppCompatActivity {
     }
 
     private void fillServicesView() {
+        Log.i(TAG, "Filling services view");
         ExpandableListView listView = (ExpandableListView) findViewById(R.id.servicesView);
         mExpandableListAdapter = createAdapter();
         updateCharacteristicsView();
@@ -92,12 +102,12 @@ public class ServiceShowActivity extends AppCompatActivity {
      */
     public void updateCharacteristicsView() {
         GATTUUIDTranslator translator = new GATTUUIDTranslator();
-        groupData.clear();
-        childrenData.clear();
+        mGroupData.clear();
+        mChildrenData.clear();
 
         for (BluetoothGattService service : mServices) {
             Map<String, String> currentServices = new HashMap<>();
-            groupData.add(currentServices);
+            mGroupData.add(currentServices);
             currentServices.put("NAME", translator.standardUUID(service.getUuid()));
 
             List<Map<String, String>> characteristics = new ArrayList<>();
@@ -108,7 +118,7 @@ public class ServiceShowActivity extends AppCompatActivity {
                 logCharacteristic(characteristic);
                 characteristics.add(currentCharacteristicMap);
             }
-            childrenData.add(characteristics);
+            mChildrenData.add(characteristics);
         }
 
         mExpandableListAdapter.notifyDataSetChanged();
@@ -117,9 +127,9 @@ public class ServiceShowActivity extends AppCompatActivity {
     @NonNull
     private SimpleExpandableListAdapter createAdapter() {
 
-        return new SimpleExpandableListAdapter(this, groupData,
+        return new SimpleExpandableListAdapter(this, mGroupData,
                 android.R.layout.simple_expandable_list_item_1, new String[]{"NAME"},
-                new int[]{android.R.id.text1}, childrenData, android.R.layout.simple_expandable_list_item_2,
+                new int[]{android.R.id.text1}, mChildrenData, android.R.layout.simple_expandable_list_item_2,
                 new String[]{"NAME"}, new int[]{android.R.id.text1});
     }
 
@@ -143,11 +153,85 @@ public class ServiceShowActivity extends AppCompatActivity {
     }
 
     @Override
+    protected void onPause() {
+        Log.i(TAG, "Activity paused!");
+        updateCharacteristicsValues();
+        fillServicesView();
+        super.onPause();
+    }
+
+    @Override
+    protected void onResume() {
+
+        super.onResume();
+    }
+
+    @Override
+    public void onBackPressed() {
+        Log.i(TAG, "Back Pressed");
+        stopServiceListening();
+        super.onBackPressed();
+    }
+
+    private void stopServiceListening() {
+        disconnectDevice();
+        stopContinuousCharacteristicsReading();
+    }
+
+    private void stopContinuousCharacteristicsReading() {
+        mBroadcastReceiver.stopListeningToCharacteristics();
+    }
+
+    private void disconnectDevice() {
+        Intent intent = new Intent(this, BLEService.class);
+        intent.setAction(BLEService.REQUEST);
+        intent.putExtra(BLEService.REQUEST, BLEService.Requests.DISCONNECT);
+        intent.putExtra(BLEService.Requests.DEVICE, mBluetoothDevice);
+        startService(intent);
+    }
+
+    @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         if (item.getItemId() == R.id.backButton) {
             onBackPressed();
         }
 
         return true;
+    }
+
+    public void updateSingleCharacteristic() {
+        Log.i(TAG, "Single characteristic update!");
+        BluetoothGattCharacteristic newCharacteristic = SingleCharacteristicStaticContainer.getInstance().pullCharacteristic();
+
+        if (newCharacteristic == null) {
+            Log.i(TAG, "Characteristic is null. Do nothing");
+            return;
+        }
+
+        Log.d(TAG, ">>>NEW CHARACTERISTIC<<<");
+        logCharacteristic(newCharacteristic);
+
+        BluetoothGattService serviceToRemove = findServiceToSwap(newCharacteristic);
+
+        Log.i(TAG, "appending service");
+        if (serviceToRemove != null) {
+            int idx = mServices.indexOf(serviceToRemove);
+            mServices.set(idx, newCharacteristic.getService());
+        } else
+            mServices.add(newCharacteristic.getService());
+
+        updateCharacteristicsView();
+    }
+
+    @Nullable
+    private BluetoothGattService findServiceToSwap(BluetoothGattCharacteristic newCharacteristic) {
+        BluetoothGattService serviceToSwap = null;
+        for (BluetoothGattService currentService : mServices) {
+            if (currentService == newCharacteristic.getService()) {
+                Log.i(TAG, "Service found");
+                serviceToSwap = currentService;
+            }
+        }
+        return serviceToSwap;
     }
 }

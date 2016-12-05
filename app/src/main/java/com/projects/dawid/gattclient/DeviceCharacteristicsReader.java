@@ -82,4 +82,8 @@ public class DeviceCharacteristicsReader {
 
         return false;
     }
+
+    public void clear() {
+        mCharacteristics.clear();
+    }
 }

@@ -34,9 +34,9 @@ class ServiceGATTCallback extends BluetoothGattCallback {
     private Map<BluetoothDevice, BluetoothGatt> mDeviceGattMap = new HashMap<>();
     private boolean mNotificationsSet = false;
     private boolean mReadingCharacteristicsInProgress = false;
+    private boolean mConnected = false;
 
     private ServiceGATTCallback(Context serviceContext) {
-        super();
         mServiceContext = serviceContext;
     }
 
@@ -50,14 +50,25 @@ class ServiceGATTCallback extends BluetoothGattCallback {
     @Override
     public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
         if(newState == BluetoothProfile.STATE_CONNECTED){
+            mConnected = true;
             Log.i(TAG, "Bluetooth device connected");
             mDeviceGattMap.put(gatt.getDevice(), gatt);
             notifyConnectionSuccessful(gatt.getDevice());
         }
         else if (newState == BluetoothProfile.STATE_DISCONNECTED){
+            mConnected = false;
             notifyDisconnection(gatt.getDevice());
+            resetPendingStates();
             Log.i(TAG, "Bluetooth device disconnected");
         }
+    }
+
+    private void resetPendingStates() {
+        Log.i(TAG, "Reset pending states");
+        mReadingCharacteristicsInProgress = false;
+        mNotificationsSet = false;
+        mCharacteristicsUpdater.clear();
+        mNotificationsManager.clear();
     }
 
     private void notifyDisconnection(BluetoothDevice device) {
@@ -118,6 +129,7 @@ class ServiceGATTCallback extends BluetoothGattCallback {
     }
 
     private void notifyReadingFinished(BluetoothGatt gatt) {
+        Log.i(TAG, "Notify reading finished");
         BluetoothDevice device = gatt.getDevice();
         Intent characteristicsReadIntent = new Intent();
         characteristicsReadIntent.setAction(BLEService.RESPONSE);
@@ -151,6 +163,22 @@ class ServiceGATTCallback extends BluetoothGattCallback {
     @Override
     public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
         Log.i(TAG, "Characteristic changed");
+        if (characteristic == null) {
+            Log.i(TAG, "Skip characteristic changed!");
+            return;
+        }
+
+        Log.i(TAG, "Notify Activity about characteristic change!");
+        SingleCharacteristicStaticContainer.getInstance().pushCharacteristic(characteristic);
+        notifyCharacteristicChanged();
+    }
+
+    private void notifyCharacteristicChanged() {
+        Intent characteristicUpdatedIntent = new Intent();
+        characteristicUpdatedIntent.setAction(BLEService.RESPONSE);
+        characteristicUpdatedIntent.putExtra(BLEService.RESPONSE, BLEService.Responses.CHARACTERISTIC_UPDATED);
+
+        LocalBroadcastManager.getInstance(mServiceContext).sendBroadcast(characteristicUpdatedIntent);
     }
 
     @Override
@@ -190,5 +218,9 @@ class ServiceGATTCallback extends BluetoothGattCallback {
             mCharacteristicsUpdater.appendCharacteristics(characteristics);
             mCharacteristicsUpdater.start(gatt);
         }
+    }
+
+    public boolean isDeviceConnected() {
+        return mConnected;
     }
 }

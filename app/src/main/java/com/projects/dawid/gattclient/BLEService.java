@@ -58,6 +58,10 @@ public class BLEService extends IntentService {
                     stopLEScan();
                     break;
 
+                case Requests.DISCONNECT:
+                    disconnectGatt(intent);
+                    break;
+
                 case Requests.CONNECT_GATT:
                     connectDevice(intent);
                     break;
@@ -79,7 +83,18 @@ public class BLEService extends IntentService {
         }
     }
 
+    private void disconnectGatt(Intent intent) {
+        Log.i(TAG, "disconnecting GATT");
+        BluetoothDevice device = intent.getParcelableExtra(Requests.DEVICE);
+        getGATTCallback().getGattForDevice(device).disconnect();
+    }
+
     private void readAllCharacteristics(Intent intent) {
+        if (!getGATTCallback().isDeviceConnected()) {
+            Log.i(TAG, "reading All characteristics will not be performed");
+            return;
+        }
+        Log.i(TAG, "reading All characteristics");
         BluetoothDevice device = intent.getParcelableExtra(Requests.DEVICE);
         BluetoothGatt gatt = getGATTCallback().getGattForDevice(device);
 
@@ -131,6 +146,7 @@ public class BLEService extends IntentService {
     }
 
     private void connectDevice(Intent intent) {
+        Log.i(TAG, "Connecting GATT");
         BluetoothDevice device = intent.getParcelableExtra(Requests.DEVICE);
 
         //never set autoconnect on true, as it's known to cause errors on some android devices
@@ -138,6 +154,7 @@ public class BLEService extends IntentService {
     }
 
     private void stopLEScan() {
+        Log.i(TAG, "Stopping LE scan");
         getBluetoothLeScanner().stopScan(new ServiceLEScanCallback(this));
         Intent scanFinishedResponse = new Intent();
         scanFinishedResponse.setAction(RESPONSE);
@@ -146,6 +163,7 @@ public class BLEService extends IntentService {
     }
 
     private void startLEScan() {
+        Log.i(TAG, "Starting LE scan");
         getBluetoothLeScanner().startScan(new ServiceLEScanCallback(this));
     }
 
@@ -167,6 +185,7 @@ public class BLEService extends IntentService {
         static final int CONNECTION_LOST = 3;
         static final int SERVICES_DISCOVERED = 4;
         static final int READ_ALL_CHARACTERISTICS = Requests.READ_ALL_CHARACTERISTICS;
+        static final int CHARACTERISTIC_UPDATED = 6;
 
         static final String DEVICE = Requests.DEVICE;
         static final String SERVICES_LIST = PREFIX + "SERVICES";

@@ -16,7 +16,7 @@ import java.util.List;
 class CharacteristicsStaticContainer {
     private static final Object mLock = new Object();
     private static CharacteristicsStaticContainer mStaticContainer;
-    private static ArrayList<BluetoothGattService> mServices = new ArrayList<>();
+    private static List<BluetoothGattService> mServices = new ArrayList<>();
 
 
     private CharacteristicsStaticContainer() {
@@ -43,9 +43,10 @@ class CharacteristicsStaticContainer {
      */
     void pushCharacteristics(List<BluetoothGattService> services) {
         synchronized (mLock) {
-            mServices.clear();
-            for (BluetoothGattService service : services)
-                mServices.add(service);
+            //mServices.clear();
+            mServices = services;
+//            for (BluetoothGattService service : services)
+//                mServices.add(service);
         }
     }
 
@@ -54,14 +55,14 @@ class CharacteristicsStaticContainer {
      *
      * @return Copy of locally stored characteristics previously pushed by pushCharacteristics.
      */
-    ArrayList<BluetoothGattService> pullCharacteristics() {
+    List<BluetoothGattService> pullCharacteristics() {
         synchronized (mLock) {
-            ArrayList<BluetoothGattService> newServices = new ArrayList<>();
-            for (BluetoothGattService service : mServices) {
-                newServices.add(service);
-            }
+//            ArrayList<BluetoothGattService> newServices = new ArrayList<>();
+//            for (BluetoothGattService service : mServices) {
+//                newServices.add(service);
+//            }
 
-            return newServices;
+            return mServices;
         }
     }
 }

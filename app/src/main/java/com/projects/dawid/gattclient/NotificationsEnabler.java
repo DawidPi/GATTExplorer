@@ -99,4 +99,8 @@ public class NotificationsEnabler {
         UUID uuid = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb");
         return characteristic.getDescriptor(uuid);
     }
+
+    public void clear() {
+        mCharacteristics.clear();
+    }
 }
