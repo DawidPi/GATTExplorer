@@ -2,7 +2,6 @@ package com.projects.dawid.gattclient;
 
 import android.bluetooth.BluetoothDevice;
 import android.content.Context;
-import android.content.Intent;
 
 /**
  * Class, that makes BLEService interface available.
@@ -15,10 +14,10 @@ abstract class BLEServiceStarter {
      * @param context activity on which behalf service is to be started.
      */
     static void startLEScan(Context context) {
-        Intent newScanRequest = new Intent(context, BLEService.class);
-        newScanRequest.setAction(BLEService.REQUEST);
-        newScanRequest.putExtra(BLEService.REQUEST, BLEService.Requests.PERFORM_SCAN);
-        context.startService(newScanRequest);
+        BluetoothTask startLEDiscovery = new DeviceDiscoveryTask(context);
+        BluetoothTaskManager taskManager = BluetoothTaskManager.getInstance();
+        taskManager.append(startLEDiscovery);
+        taskManager.tryExecute();
     }
 
     /**
@@ -28,10 +27,10 @@ abstract class BLEServiceStarter {
      *                on which behalf service is to be started.
      */
     static void stopLEScan(Context context) {
-        Intent stopScanRequest = new Intent(context, BLEService.class);
-        stopScanRequest.setAction(BLEService.REQUEST);
-        stopScanRequest.putExtra(BLEService.REQUEST, BLEService.Requests.STOP_SCAN);
-        context.startService(stopScanRequest);
+        BluetoothTask stopLEDiscovery = new StopDeviceDiscoveryTask(context);
+        BluetoothTaskManager taskManager = BluetoothTaskManager.getInstance();
+        taskManager.append(stopLEDiscovery);
+        taskManager.tryExecute();
     }
 
     /**
@@ -42,10 +41,27 @@ abstract class BLEServiceStarter {
      * @param device  device to connect.
      */
     static void connectDevice(Context context, BluetoothDevice device) {
-        Intent intent = new Intent(context, BLEService.class);
-        intent.setAction(BLEService.REQUEST);
-        intent.putExtra(BLEService.REQUEST, BLEService.Requests.CONNECT_GATT);
-        intent.putExtra(BLEService.Requests.DEVICE, device);
-        context.startService(intent);
+        BluetoothTask connectDevice = new ConnectBLETask(context, device);
+        BluetoothTaskManager taskManager = BluetoothTaskManager.getInstance();
+        taskManager.append(connectDevice);
+        taskManager.tryExecute();
+    }
+
+    static void serviceDiscovery(Context context, BluetoothDevice device) {
+        BluetoothTask serviceDiscovery = new ServiceDiscoveryTask(context, device);
+        BluetoothTaskManager taskManager = BluetoothTaskManager.getInstance();
+        taskManager.append(serviceDiscovery);
+        taskManager.tryExecute();
+    }
+
+    static void readAllCharacteristics(Context context, BluetoothDevice device) {
+        BluetoothTask readAllCharacteristics = new ReadAllCharacteristicsTask(context, device);
+        BluetoothTaskManager taskManager = BluetoothTaskManager.getInstance();
+        taskManager.append(readAllCharacteristics);
+        taskManager.tryExecute();
+    }
+
+    static void disconnectDevice(Context context, BluetoothDevice device) {
+        BluetoothTask disconnectDevice = new DisconnectTask(context, device);
     }
 }

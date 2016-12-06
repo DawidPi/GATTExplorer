@@ -8,11 +8,11 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.util.Log;
 
-import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 /**
- * Receives and handles Responses from BLEService regarding device discovery and device connection.
+ * Receives and handles Response from BLEService regarding device discovery and device connection.
  */
 public class DiscoveredDevicesBroadcastReceiver extends BroadcastReceiver {
     public static IntentFilter ResponseIntentFilter = new IntentFilter(BLEService.RESPONSE);
@@ -39,33 +39,30 @@ public class DiscoveredDevicesBroadcastReceiver extends BroadcastReceiver {
             return;
         }
 
-        int responseType = intent.getIntExtra(BLEService.RESPONSE, -1);
+        BLEService.Response responseType = (BLEService.Response) intent.getSerializableExtra(BLEService.RESPONSE);
 
         switch (responseType) {
-            case BLEService.Responses.DEVICE_FOUND:
+            case DEVICE_FOUND:
                 updateDeviceList(intent);
                 break;
 
-            case BLEService.Responses.CONNECTION_SUCCESSFUL:
+            case CONNECTION_SUCCESSFUL:
                 updateConnectedDevice(intent);
                 break;
 
-            case BLEService.Responses.SCAN_FINISHED:
+            case SCAN_FINISHED:
                 clearDevices();
                 break;
 
-            case BLEService.Responses.CONNECTION_LOST:
+            case CONNECTION_LOST:
                 notifyOnConnectionLost(intent);
                 break;
 
-            case BLEService.Responses.SERVICES_DISCOVERED:
+            case SERVICES_DISCOVERED:
                 BLEServiceStarter.stopLEScan(mActivityContext);
                 createViewWithServices(intent);
                 break;
 
-            case -1:
-                Log.e(TAG, "No response type specified!");
-                break;
             default:
                 Log.d(TAG, "Response type unknown");
         }
@@ -75,8 +72,8 @@ public class DiscoveredDevicesBroadcastReceiver extends BroadcastReceiver {
     private void createViewWithServices(Intent intent) {
         Log.i(TAG, "creating new activity!");
 
-        BluetoothDevice device = intent.getParcelableExtra(BLEService.Responses.DEVICE);
-        ArrayList<BluetoothGattService> services = intent.getParcelableArrayListExtra(BLEService.Responses.SERVICES_LIST);
+        BluetoothDevice device = intent.getParcelableExtra(BLEService.DEVICE);
+        List<BluetoothGattService> services = CharacteristicsStaticContainer.getInstance().pullCharacteristics();
 
         Intent serviceShowIntent = new Intent(mActivityContext, ServiceShowActivity.class);
         serviceShowIntent.putExtra(ServiceShowActivity.DEVICE, device);
@@ -85,7 +82,7 @@ public class DiscoveredDevicesBroadcastReceiver extends BroadcastReceiver {
     }
 
     private void notifyOnConnectionLost(Intent intent) {
-            BluetoothDevice device = intent.getParcelableExtra(BLEService.Responses.DEVICE);
+        BluetoothDevice device = intent.getParcelableExtra(BLEService.DEVICE);
             if (device != null) {
                 mBluetoothDevices.remove(device.getName());
                 mBluetoothDevicesAdapter.remove(new BluetoothDeviceAdapter(device));
@@ -99,7 +96,7 @@ public class DiscoveredDevicesBroadcastReceiver extends BroadcastReceiver {
     }
 
     private void updateConnectedDevice(Intent intent) {
-        BluetoothDevice connectedBTDevice = intent.getParcelableExtra(BLEService.Responses.DEVICE);
+        BluetoothDevice connectedBTDevice = intent.getParcelableExtra(BLEService.DEVICE);
 
         if (connectedBTDevice != null) {
             mBluetoothDevicesAdapter.addConnectedDevice(new BluetoothDeviceAdapter(connectedBTDevice));
@@ -108,7 +105,7 @@ public class DiscoveredDevicesBroadcastReceiver extends BroadcastReceiver {
     }
 
     private void updateDeviceList(Intent responseIntent) {
-        BluetoothDevice newDevice = responseIntent.getParcelableExtra(BLEService.Responses.DEVICE);
+        BluetoothDevice newDevice = responseIntent.getParcelableExtra(BLEService.DEVICE);
         if (newDevice == null) {
             return;
         }

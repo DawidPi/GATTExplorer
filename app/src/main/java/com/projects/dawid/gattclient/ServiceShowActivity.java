@@ -3,7 +3,6 @@ package com.projects.dawid.gattclient;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattService;
-import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -81,12 +80,7 @@ public class ServiceShowActivity extends AppCompatActivity {
      * Starts request for refreshing characteristics Values.
      */
     public void updateCharacteristicsValues() {
-        Log.i(TAG, "CharacteristicsValues intent!");
-        Intent registerDeviceNotificationsIntent = new Intent(this, BLEService.class);
-        registerDeviceNotificationsIntent.setAction(BLEService.REQUEST);
-        registerDeviceNotificationsIntent.putExtra(BLEService.REQUEST, BLEService.Requests.READ_ALL_CHARACTERISTICS);
-        registerDeviceNotificationsIntent.putExtra(BLEService.Requests.DEVICE, mBluetoothDevice);
-        startService(registerDeviceNotificationsIntent);
+        BLEServiceStarter.readAllCharacteristics(this, mBluetoothDevice);
     }
 
     private void fillServicesView() {
@@ -169,25 +163,7 @@ public class ServiceShowActivity extends AppCompatActivity {
     @Override
     public void onBackPressed() {
         Log.i(TAG, "Back Pressed");
-        stopServiceListening();
         super.onBackPressed();
-    }
-
-    private void stopServiceListening() {
-        disconnectDevice();
-        stopContinuousCharacteristicsReading();
-    }
-
-    private void stopContinuousCharacteristicsReading() {
-        mBroadcastReceiver.stopListeningToCharacteristics();
-    }
-
-    private void disconnectDevice() {
-        Intent intent = new Intent(this, BLEService.class);
-        intent.setAction(BLEService.REQUEST);
-        intent.putExtra(BLEService.REQUEST, BLEService.Requests.DISCONNECT);
-        intent.putExtra(BLEService.Requests.DEVICE, mBluetoothDevice);
-        startService(intent);
     }
 
     @Override

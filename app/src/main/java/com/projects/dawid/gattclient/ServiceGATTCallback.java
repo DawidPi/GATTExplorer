@@ -5,17 +5,10 @@ import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCallback;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
-import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothProfile;
 import android.content.Context;
 import android.content.Intent;
-import android.support.annotation.NonNull;
-import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
 
 
 // issue occured, when I realized, that Intent service is killed after
@@ -26,65 +19,42 @@ import java.util.Map;
  * Callback for all the GATT events.
  */
 class ServiceGATTCallback extends BluetoothGattCallback {
-    private static ServiceGATTCallback staticCallback;
     private Context mServiceContext;
     private String TAG = "GATT CALLBACK";
     private NotificationsEnabler mNotificationsManager = new NotificationsEnabler();
     private DeviceCharacteristicsReader mCharacteristicsUpdater = new DeviceCharacteristicsReader();
-    private Map<BluetoothDevice, BluetoothGatt> mDeviceGattMap = new HashMap<>();
-    private boolean mNotificationsSet = false;
-    private boolean mReadingCharacteristicsInProgress = false;
-    private boolean mConnected = false;
 
-    private ServiceGATTCallback(Context serviceContext) {
+    ServiceGATTCallback(Context serviceContext) {
         mServiceContext = serviceContext;
-    }
-
-    static ServiceGATTCallback getInstance(Context context) {
-        if (staticCallback == null)
-            staticCallback = new ServiceGATTCallback(context);
-
-        return staticCallback;
     }
 
     @Override
     public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
         if(newState == BluetoothProfile.STATE_CONNECTED){
-            mConnected = true;
             Log.i(TAG, "Bluetooth device connected");
-            mDeviceGattMap.put(gatt.getDevice(), gatt);
+            DeviceGattMap.getInstance().putGattForDevice(gatt, gatt.getDevice());
             notifyConnectionSuccessful(gatt.getDevice());
         }
         else if (newState == BluetoothProfile.STATE_DISCONNECTED){
-            mConnected = false;
             notifyDisconnection(gatt.getDevice());
-            resetPendingStates();
             Log.i(TAG, "Bluetooth device disconnected");
         }
-    }
-
-    private void resetPendingStates() {
-        Log.i(TAG, "Reset pending states");
-        mReadingCharacteristicsInProgress = false;
-        mNotificationsSet = false;
-        mCharacteristicsUpdater.clear();
-        mNotificationsManager.clear();
     }
 
     private void notifyDisconnection(BluetoothDevice device) {
         Intent connectionLostIntent = new Intent();
         connectionLostIntent.setAction(BLEService.RESPONSE);
-        connectionLostIntent.putExtra(BLEService.RESPONSE, BLEService.Responses.CONNECTION_LOST);
-        connectionLostIntent.putExtra(BLEService.Responses.DEVICE, device);
-        LocalBroadcastManager.getInstance(mServiceContext).sendBroadcast(connectionLostIntent);
+        connectionLostIntent.putExtra(BLEService.RESPONSE, BLEService.Response.CONNECTION_LOST);
+        connectionLostIntent.putExtra(BLEService.DEVICE, device);
+        BluetoothTaskManager.getInstance().getCurrentTask().onResponse(mServiceContext, connectionLostIntent);
     }
 
     private void notifyConnectionSuccessful(BluetoothDevice device) {
         Intent connectionSuccessfulIntent = new Intent();
         connectionSuccessfulIntent.setAction(BLEService.RESPONSE);
-        connectionSuccessfulIntent.putExtra(BLEService.RESPONSE, BLEService.Responses.CONNECTION_SUCCESSFUL);
-        connectionSuccessfulIntent.putExtra(BLEService.Responses.DEVICE, device);
-        LocalBroadcastManager.getInstance(mServiceContext).sendBroadcast(connectionSuccessfulIntent);
+        connectionSuccessfulIntent.putExtra(BLEService.RESPONSE, BLEService.Response.CONNECTION_SUCCESSFUL);
+        connectionSuccessfulIntent.putExtra(BLEService.DEVICE, device);
+        BluetoothTaskManager.getInstance().getCurrentTask().onResponse(mServiceContext, connectionSuccessfulIntent);
     }
 
     @Override
@@ -96,50 +66,21 @@ class ServiceGATTCallback extends BluetoothGattCallback {
     private void notifyServicesDiscovered(BluetoothGatt gatt) {
         Intent intent = new Intent();
         intent.setAction(BLEService.RESPONSE);
-        intent.putExtra(BLEService.RESPONSE, BLEService.Responses.SERVICES_DISCOVERED);
-        intent.putExtra(BLEService.Responses.DEVICE, gatt.getDevice());
-        intent.putParcelableArrayListExtra(BLEService.Responses.SERVICES_LIST, getArrayListServices(gatt));
-        LocalBroadcastManager.getInstance(mServiceContext).sendBroadcast(intent);
-    }
-
-    @NonNull
-    private ArrayList<BluetoothGattService> getArrayListServices(BluetoothGatt gatt) {
-        ArrayList<BluetoothGattService> services = new ArrayList<>();
-        services.addAll(gatt.getServices());
-        return services;
+        intent.putExtra(BLEService.RESPONSE, BLEService.Response.SERVICES_DISCOVERED);
+        intent.putExtra(BLEService.DEVICE, gatt.getDevice());
+        CharacteristicsStaticContainer.getInstance().pushCharacteristics(gatt.getServices());
+        BluetoothTaskManager.getInstance().getCurrentTask().onResponse(mServiceContext, intent);
     }
 
     @Override
     public void onCharacteristicRead(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
+        Log.i(TAG, "Characteristic Read callback");
         logCharacteristic(characteristic);
-
-        boolean noCharacteristicsLeft = !mCharacteristicsUpdater.onCharacteristicRead();
-
-        Log.i(TAG, "Characteristics read finished : " + noCharacteristicsLeft);
-        if (noCharacteristicsLeft) {
-            Log.i(TAG, "Updating characteristics view");
-            finishReadingCharacteristics(gatt);
-        }
-
-    }
-
-    private void finishReadingCharacteristics(BluetoothGatt gatt) {
-        Log.i(TAG, "No characteristics left to read.");
-        notifyReadingFinished(gatt);
-    }
-
-    private void notifyReadingFinished(BluetoothGatt gatt) {
-        Log.i(TAG, "Notify reading finished");
-        BluetoothDevice device = gatt.getDevice();
-        Intent characteristicsReadIntent = new Intent();
-        characteristicsReadIntent.setAction(BLEService.RESPONSE);
-        characteristicsReadIntent.putExtra(BLEService.RESPONSE, BLEService.Responses.READ_ALL_CHARACTERISTICS);
-        characteristicsReadIntent.putExtra(BLEService.Responses.DEVICE, device);
-        CharacteristicsStaticContainer characteristicsContainer = CharacteristicsStaticContainer.getInstance();
-        characteristicsContainer.pushCharacteristics(gatt.getServices());
-
-        LocalBroadcastManager.getInstance(mServiceContext).sendBroadcast(characteristicsReadIntent);
-        mReadingCharacteristicsInProgress = false;
+        Intent characteristicReadIntent = new Intent();
+        characteristicReadIntent.setAction(BLEService.RESPONSE);
+        characteristicReadIntent.putExtra(BLEService.RESPONSE, BLEService.Response.CHARACTERISTIC_READ);
+        SingleCharacteristicStaticContainer.getInstance().pushCharacteristic(characteristic);
+        BluetoothTaskManager.getInstance().getCurrentTask().onResponse(mServiceContext, characteristicReadIntent);
     }
 
     @Override
@@ -176,9 +117,8 @@ class ServiceGATTCallback extends BluetoothGattCallback {
     private void notifyCharacteristicChanged() {
         Intent characteristicUpdatedIntent = new Intent();
         characteristicUpdatedIntent.setAction(BLEService.RESPONSE);
-        characteristicUpdatedIntent.putExtra(BLEService.RESPONSE, BLEService.Responses.CHARACTERISTIC_UPDATED);
-
-        LocalBroadcastManager.getInstance(mServiceContext).sendBroadcast(characteristicUpdatedIntent);
+        characteristicUpdatedIntent.putExtra(BLEService.RESPONSE, BLEService.Response.CHARACTERISTIC_UPDATED);
+        BluetoothTaskManager.getInstance().getCurrentTask().onResponse(mServiceContext, characteristicUpdatedIntent);
     }
 
     @Override
@@ -189,38 +129,4 @@ class ServiceGATTCallback extends BluetoothGattCallback {
         }
     }
 
-    BluetoothGatt getGattForDevice(BluetoothDevice device) {
-        Log.i(TAG, "get gatt for device: " + device);
-        return mDeviceGattMap.get(device);
-    }
-
-    void startReadingCharacteristics(@NonNull BluetoothDevice device,
-                                     @NonNull ArrayList<BluetoothGattCharacteristic> characteristics,
-                                     @NonNull ArrayList<BluetoothGattDescriptor> descriptors) {
-        Log.i(TAG, "Starting to read Characteristics of device: " + device.getName());
-        if (mReadingCharacteristicsInProgress) {
-            Log.d(TAG, "Reading Characteristics already in progress");
-            return;
-        }
-
-        mReadingCharacteristicsInProgress = true;
-
-
-        Log.i(TAG, "descriptors size: " + descriptors.size() + " characteristics size: " + characteristics.size());
-
-        BluetoothGatt gatt = getGattForDevice(device);
-        if (!mNotificationsSet) {
-            mNotificationsManager.appendCharacteristics(characteristics);
-            mCharacteristicsUpdater.appendCharacteristics(characteristics);
-            mNotificationsManager.start(gatt);
-            mNotificationsSet = true;
-        } else {
-            mCharacteristicsUpdater.appendCharacteristics(characteristics);
-            mCharacteristicsUpdater.start(gatt);
-        }
-    }
-
-    public boolean isDeviceConnected() {
-        return mConnected;
-    }
 }

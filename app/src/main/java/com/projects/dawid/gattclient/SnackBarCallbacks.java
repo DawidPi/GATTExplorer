@@ -2,7 +2,6 @@ package com.projects.dawid.gattclient;
 
 import android.app.Activity;
 import android.bluetooth.BluetoothDevice;
-import android.content.Intent;
 import android.support.design.widget.Snackbar;
 import android.util.Log;
 import android.view.View;
@@ -28,11 +27,7 @@ abstract class SnackBarCallbacks {
         @Override
         public void onClick(View view) {
             Log.i(TAG, "Discover services for device: " + mDevice);
-            Intent intent = new Intent(mActivity, BLEService.class);
-            intent.setAction(BLEService.REQUEST);
-            intent.putExtra(BLEService.REQUEST, BLEService.Requests.PERFORM_SERVICE_DISCOVERY);
-            intent.putExtra(BLEService.Requests.DEVICE, mDevice);
-            mActivity.startService(intent);
+            BLEServiceStarter.serviceDiscovery(mActivity, mDevice);
         }
     }
 

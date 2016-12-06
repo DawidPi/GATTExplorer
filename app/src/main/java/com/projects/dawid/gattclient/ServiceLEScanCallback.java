@@ -28,8 +28,8 @@ class ServiceLEScanCallback extends ScanCallback {
     private Intent createDeviceFoundIntent(BluetoothDevice device) {
         Intent deviceFoundResponseIntent = new Intent();
         deviceFoundResponseIntent.setAction(BLEService.RESPONSE);
-        deviceFoundResponseIntent.putExtra(BLEService.RESPONSE, BLEService.Responses.DEVICE_FOUND);
-        deviceFoundResponseIntent.putExtra(BLEService.Responses.DEVICE, device);
+        deviceFoundResponseIntent.putExtra(BLEService.RESPONSE, BLEService.Response.DEVICE_FOUND);
+        deviceFoundResponseIntent.putExtra(BLEService.DEVICE, device);
         return deviceFoundResponseIntent;
     }
 }

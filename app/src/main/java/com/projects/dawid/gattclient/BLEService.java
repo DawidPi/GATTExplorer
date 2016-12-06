@@ -4,18 +4,15 @@ import android.app.IntentService;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCharacteristic;
-import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.le.BluetoothLeScanner;
 import android.content.Context;
 import android.content.Intent;
 import android.support.annotation.NonNull;
-import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
 import java.util.ArrayList;
-import java.util.List;
 
 /**
  * IntentService, that handles Bluetooth LE action for the views. Interface for this
@@ -24,9 +21,11 @@ import java.util.List;
 public class BLEService extends IntentService {
 
     private static final String TAG = "BLEService";
-    private static String PREFIX = "com.pilarski.GATTClient";
+    private static String PREFIX = "com.pilarski.gattclient.bleservice";
+    public static final String DEVICE = PREFIX + "DEVICE";
     public static final String REQUEST = PREFIX + "REQUEST";
     public static final String RESPONSE = PREFIX + "RESPONSE";
+    public static final String CHARACTERISTIC = PREFIX + "CHARACTERISTIC";
 
     public BLEService() {
         super("BLEService");
@@ -34,7 +33,7 @@ public class BLEService extends IntentService {
 
     @NonNull
     private ServiceGATTCallback getGATTCallback() {
-        return ServiceGATTCallback.getInstance(this);
+        return new ServiceGATTCallback(this);
     }
 
     @NonNull
@@ -48,65 +47,55 @@ public class BLEService extends IntentService {
 
         if (intent != null) {
             Log.i(TAG, "OnHandleIntent not null");
-            Integer requestType = intent.getIntExtra(REQUEST, -1);
+            Request requestType = (Request) intent.getSerializableExtra(REQUEST);
             switch (requestType) {
-                case Requests.PERFORM_SCAN:
+                case DISCOVER_DEVICES:
                     startLEScan();
                     break;
 
-                case Requests.STOP_SCAN:
+                case STOP_SCAN:
                     stopLEScan();
                     break;
 
-                case Requests.DISCONNECT:
+                case DISCONNECT:
                     disconnectGatt(intent);
                     break;
 
-                case Requests.CONNECT_GATT:
+                case CONNECT_GATT:
                     connectDevice(intent);
                     break;
 
-                case Requests.PERFORM_SERVICE_DISCOVERY:
+                case PERFORM_SERVICE_DISCOVERY:
                     discoverServices(intent);
                     break;
 
-                case Requests.READ_ALL_CHARACTERISTICS:
-                    readAllCharacteristics(intent);
+                case READ_CHARACTERISTIC:
+                    readCharacteristic(intent);
                     break;
-                
-                case -1:
-                    Log.e(TAG, "No request sent!");
-                    break;
+
                 default:
-                    Log.e(TAG, "Unknown request type!");
+                    Log.e(TAG, "Unknown request type: " + requestType);
             }
         }
     }
 
-    private void disconnectGatt(Intent intent) {
-        Log.i(TAG, "disconnecting GATT");
-        BluetoothDevice device = intent.getParcelableExtra(Requests.DEVICE);
-        getGATTCallback().getGattForDevice(device).disconnect();
+    private void readCharacteristic(Intent intent) {
+        Log.i(TAG, "Request to read characteristic started!");
+        if (!(BluetoothTaskManager.getInstance().getCurrentTask() instanceof ReadCharacteristicTask)) {
+            Log.e(TAG, "Task of not expected type");
+            return;
+        }
+
+        BluetoothDevice device = intent.getParcelableExtra(BLEService.DEVICE);
+        ReadCharacteristicTask task = (ReadCharacteristicTask) BluetoothTaskManager.getInstance().getCurrentTask();
+        BluetoothGattCharacteristic characteristic = task.getCharacteristic();
+        DeviceGattMap.getInstance().getGattForDevice(device).readCharacteristic(characteristic);
     }
 
-    private void readAllCharacteristics(Intent intent) {
-        if (!getGATTCallback().isDeviceConnected()) {
-            Log.i(TAG, "reading All characteristics will not be performed");
-            return;
-        }
-        Log.i(TAG, "reading All characteristics");
-        BluetoothDevice device = intent.getParcelableExtra(Requests.DEVICE);
-        BluetoothGatt gatt = getGATTCallback().getGattForDevice(device);
-
-        if (device == null || gatt == null) {
-            Log.e(TAG, "device or gatt is null");
-            return;
-        }
-
-        ArrayList<BluetoothGattCharacteristic> characteristics = prepareCharacteristicsList(gatt);
-        ArrayList<BluetoothGattDescriptor> descriptors = prepareDescriptorsList(characteristics);
-
-        getGATTCallback().startReadingCharacteristics(device, characteristics, descriptors);
+    private void disconnectGatt(Intent intent) {
+        Log.i(TAG, "disconnecting GATT");
+        BluetoothDevice device = intent.getParcelableExtra(DEVICE);
+        DeviceGattMap.getInstance().getGattForDevice(device).disconnect();
     }
 
     private ArrayList<BluetoothGattCharacteristic> prepareCharacteristicsList(BluetoothGatt gatt) {
@@ -121,22 +110,10 @@ public class BLEService extends IntentService {
         return characteristics;
     }
 
-    private ArrayList<BluetoothGattDescriptor> prepareDescriptorsList(List<BluetoothGattCharacteristic> characteristics) {
-        ArrayList<BluetoothGattDescriptor> descriptors = new ArrayList<>();
-
-        for (BluetoothGattCharacteristic characteristic : characteristics) {
-            for (BluetoothGattDescriptor descriptor : characteristic.getDescriptors()) {
-                descriptors.add(descriptor);
-            }
-        }
-
-        return descriptors;
-    }
-
     private void discoverServices(Intent intent) {
         Log.i(TAG, "Notifying about discovered services");
-        BluetoothDevice device = intent.getParcelableExtra(Requests.DEVICE);
-        BluetoothGatt gatt = getGATTCallback().getGattForDevice(device);
+        BluetoothDevice device = intent.getParcelableExtra(DEVICE);
+        BluetoothGatt gatt = DeviceGattMap.getInstance().getGattForDevice(device);
 
         if (gatt != null) {
             gatt.discoverServices();
@@ -147,7 +124,7 @@ public class BLEService extends IntentService {
 
     private void connectDevice(Intent intent) {
         Log.i(TAG, "Connecting GATT");
-        BluetoothDevice device = intent.getParcelableExtra(Requests.DEVICE);
+        BluetoothDevice device = intent.getParcelableExtra(DEVICE);
 
         //never set autoconnect on true, as it's known to cause errors on some android devices
         device.connectGatt(this, false, getGATTCallback());
@@ -156,10 +133,6 @@ public class BLEService extends IntentService {
     private void stopLEScan() {
         Log.i(TAG, "Stopping LE scan");
         getBluetoothLeScanner().stopScan(new ServiceLEScanCallback(this));
-        Intent scanFinishedResponse = new Intent();
-        scanFinishedResponse.setAction(RESPONSE);
-        scanFinishedResponse.putExtra(RESPONSE, Responses.SCAN_FINISHED);
-        LocalBroadcastManager.getInstance(this).sendBroadcast(scanFinishedResponse);
     }
 
     private void startLEScan() {
@@ -167,27 +140,22 @@ public class BLEService extends IntentService {
         getBluetoothLeScanner().startScan(new ServiceLEScanCallback(this));
     }
 
-    public static final class Requests {
-        static final int PERFORM_SERVICE_DISCOVERY = 0;
-        static final int PERFORM_SCAN = 1;
-        static final int STOP_SCAN = 2;
-        static final int CONNECT_GATT = 3;
-        static final int DISCONNECT = 4;
-        static final int READ_ALL_CHARACTERISTICS = 5;
-
-        static final String DEVICE = PREFIX + "DEVICE";
+    enum Request {
+        PERFORM_SERVICE_DISCOVERY,
+        DISCOVER_DEVICES,
+        STOP_SCAN,
+        CONNECT_GATT,
+        DISCONNECT,
+        READ_CHARACTERISTIC
     }
 
-    public static final class Responses {
-        static final int DEVICE_FOUND = 0;
-        static final int CONNECTION_SUCCESSFUL = 1;
-        static final int SCAN_FINISHED = 2;
-        static final int CONNECTION_LOST = 3;
-        static final int SERVICES_DISCOVERED = 4;
-        static final int READ_ALL_CHARACTERISTICS = Requests.READ_ALL_CHARACTERISTICS;
-        static final int CHARACTERISTIC_UPDATED = 6;
-
-        static final String DEVICE = Requests.DEVICE;
-        static final String SERVICES_LIST = PREFIX + "SERVICES";
+    enum Response {
+        DEVICE_FOUND,
+        CONNECTION_SUCCESSFUL,
+        SCAN_FINISHED,
+        CONNECTION_LOST,
+        SERVICES_DISCOVERED,
+        CHARACTERISTIC_READ,
+        CHARACTERISTIC_UPDATED
     }
 }
