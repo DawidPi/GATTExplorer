@@ -25,4 +25,9 @@ class ServiceDiscoveryTask extends BluetoothTask {
         discoverServicesIntent.putExtra(BLEService.DEVICE, mDevice);
         mActivityContext.startService(discoverServicesIntent);
     }
+
+    @Override
+    public String toString() {
+        return "ServiceDiscoveryTask";
+    }
 }

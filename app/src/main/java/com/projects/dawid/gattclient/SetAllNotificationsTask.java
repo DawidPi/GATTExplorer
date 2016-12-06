@@ -1,6 +1,5 @@
 package com.projects.dawid.gattclient;
 
-
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCharacteristic;
@@ -9,24 +8,27 @@ import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
 
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
 
-public class ReadAllCharacteristicsTask extends BluetoothTask {
+/**
+ * Created by Dawid on 06.12.2016.
+ */
+
+public class SetAllNotificationsTask extends BluetoothTask {
 
     private final Context mActivityContext;
     private final BluetoothDevice mDevice;
-    private String TAG = "AllCharacteristicsTask";
+    private final String TAG = "AllNotificationsTask";
 
-    ReadAllCharacteristicsTask(Context activityContext, BluetoothDevice device) {
+    SetAllNotificationsTask(Context activityContext, BluetoothDevice device) {
         mActivityContext = activityContext;
         mDevice = device;
     }
 
     @Override
     public void run() {
-        Collection<BluetoothGattCharacteristic> characteristics = prepareCharacteristics();
+        Collection<BluetoothGattCharacteristic> characteristics = prepareAllCharacteristics();
 
         if (characteristics == null) {
             Log.e(TAG, "Could not prepare characteristics. Aborting");
@@ -34,28 +36,27 @@ public class ReadAllCharacteristicsTask extends BluetoothTask {
             return;
         }
 
-        appendAllCharacteristics(characteristics);
+        appendSubtasks(characteristics);
         onResponse(null, null);
     }
 
-    private void appendAllCharacteristics(Collection<BluetoothGattCharacteristic> characteristics) {
+    private void appendSubtasks(Collection<BluetoothGattCharacteristic> characteristics) {
         for (BluetoothGattCharacteristic characteristic : characteristics) {
-            BluetoothTaskManager taskManager = BluetoothTaskManager.getInstance();
-
-            BluetoothTask newTask = new ReadCharacteristicTask(mActivityContext, characteristic, mDevice);
-            taskManager.append(newTask);
+            BluetoothTask task = new EnableCharacteristicNotificationTask(mActivityContext, characteristic, mDevice);
+            BluetoothTaskManager.getInstance().append(task);
         }
     }
 
-    private Collection<BluetoothGattCharacteristic> prepareCharacteristics() {
-        BluetoothGatt gatt = DeviceGattMap.getInstance().getGattForDevice(mDevice);
+    private Collection<BluetoothGattCharacteristic> prepareAllCharacteristics() {
+        ArrayList<BluetoothGattCharacteristic> characteristics = new ArrayList<>();
+
+        final BluetoothGatt gatt = DeviceGattMap.getInstance().getGattForDevice(mDevice);
 
         if (gatt == null) {
             Log.e(TAG, "gatt is null. Aborting");
             return null;
         }
 
-        Set<BluetoothGattCharacteristic> characteristics = new HashSet<>();
         for (BluetoothGattService service : gatt.getServices()) {
             if (service == null)
                 continue;
@@ -78,6 +79,6 @@ public class ReadAllCharacteristicsTask extends BluetoothTask {
 
     @Override
     public String toString() {
-        return "ReadAllCharacteristicsTask";
+        return "SetAllNotificationsTask";
     }
 }

@@ -22,4 +22,9 @@ class DisconnectTask extends BluetoothTask {
         intent.putExtra(BLEService.DEVICE, mDevice);
         mActivityContext.startService(intent);
     }
+
+    @Override
+    public String toString() {
+        return "DisconnectTask";
+    }
 }

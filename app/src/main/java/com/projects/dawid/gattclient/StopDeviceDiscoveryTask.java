@@ -22,7 +22,7 @@ public class StopDeviceDiscoveryTask extends BluetoothTask {
     }
 
     @Override
-    void onResponse(Context context, Intent responseIntent) {
-        BluetoothTaskManager.getInstance().taskFinished(this);
+    public String toString() {
+        return "StopDeviceDiscoveryTask";
     }
 }

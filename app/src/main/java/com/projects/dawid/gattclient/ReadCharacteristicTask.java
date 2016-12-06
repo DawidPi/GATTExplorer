@@ -26,9 +26,12 @@ public class ReadCharacteristicTask extends BluetoothTask {
         mActivityContext.startService(readCharacteristicIntent);
     }
 
-    public BluetoothGattCharacteristic getCharacteristic() {
+    BluetoothGattCharacteristic getCharacteristic() {
         return mCharacteristicToRead;
     }
 
-
+    @Override
+    public String toString() {
+        return "ReadCharacteristicTask";
+    }
 }

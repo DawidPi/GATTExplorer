@@ -8,6 +8,7 @@ import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothProfile;
 import android.content.Context;
 import android.content.Intent;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
 
@@ -118,15 +119,13 @@ class ServiceGATTCallback extends BluetoothGattCallback {
         Intent characteristicUpdatedIntent = new Intent();
         characteristicUpdatedIntent.setAction(BLEService.RESPONSE);
         characteristicUpdatedIntent.putExtra(BLEService.RESPONSE, BLEService.Response.CHARACTERISTIC_UPDATED);
-        BluetoothTaskManager.getInstance().getCurrentTask().onResponse(mServiceContext, characteristicUpdatedIntent);
+        LocalBroadcastManager.getInstance(mServiceContext).sendBroadcast(characteristicUpdatedIntent);
     }
 
     @Override
     public void onDescriptorWrite(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
         Log.i(TAG, "Descriptor write finished successfully");
-        if (!mNotificationsManager.onDescriptorWriteFinished()) {
-            mCharacteristicsUpdater.start(gatt);
-        }
+        BluetoothTaskManager.getInstance().getCurrentTask().onResponse(null, null);
     }
 
 }

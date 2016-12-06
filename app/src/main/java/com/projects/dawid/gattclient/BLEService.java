@@ -4,7 +4,7 @@ import android.app.IntentService;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCharacteristic;
-import android.bluetooth.BluetoothGattService;
+import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.le.BluetoothLeScanner;
 import android.content.Context;
@@ -12,7 +12,7 @@ import android.content.Intent;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
-import java.util.ArrayList;
+import java.util.UUID;
 
 /**
  * IntentService, that handles Bluetooth LE action for the views. Interface for this
@@ -73,41 +73,77 @@ public class BLEService extends IntentService {
                     readCharacteristic(intent);
                     break;
 
+                case ENABLE_CHARACTERISTIC_NOTIFICATION:
+                    enableCharacteristicNotification(intent);
+                    break;
                 default:
                     Log.e(TAG, "Unknown request type: " + requestType);
             }
         }
     }
 
+    private void enableCharacteristicNotification(Intent intent) {
+        BluetoothDevice device = intent.getParcelableExtra(BLEService.DEVICE);
+        final BluetoothTask currentTask = BluetoothTaskManager.getInstance().getCurrentTask();
+        if (!(currentTask instanceof EnableCharacteristicNotificationTask)) {
+            Log.e(TAG, "Unexpected task!");
+            return;
+        }
+
+        EnableCharacteristicNotificationTask notificationTask = (EnableCharacteristicNotificationTask) currentTask;
+
+        BluetoothGattCharacteristic characteristic = notificationTask.getCharacteristic();
+
+        final BluetoothGatt gatt = DeviceGattMap.getInstance().getGattForDevice(device);
+        if (!gatt.setCharacteristicNotification(characteristic, true)) {
+            Log.i(TAG, "Could not set notification. Skip");
+            notificationTask.onResponse(null, null);
+            return;
+        }
+
+        BluetoothGattDescriptor descriptor = findNotificationDescriptor(characteristic);
+        if (descriptor == null) {
+            Log.i(TAG, "Descriptor not found. Skip");
+            notificationTask.onResponse(null, null);
+            return;
+        }
+
+        descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
+        if (!gatt.writeDescriptor(descriptor)) {
+            Log.i(TAG, "Could not write descriptor.Skip");
+            notificationTask.onResponse(null, null);
+        }
+    }
+
     private void readCharacteristic(Intent intent) {
         Log.i(TAG, "Request to read characteristic started!");
-        if (!(BluetoothTaskManager.getInstance().getCurrentTask() instanceof ReadCharacteristicTask)) {
+        final BluetoothTaskManager taskManager = BluetoothTaskManager.getInstance();
+        if (!(taskManager.getCurrentTask() instanceof ReadCharacteristicTask)) {
             Log.e(TAG, "Task of not expected type");
             return;
         }
 
         BluetoothDevice device = intent.getParcelableExtra(BLEService.DEVICE);
-        ReadCharacteristicTask task = (ReadCharacteristicTask) BluetoothTaskManager.getInstance().getCurrentTask();
+        ReadCharacteristicTask task = (ReadCharacteristicTask) taskManager.getCurrentTask();
         BluetoothGattCharacteristic characteristic = task.getCharacteristic();
-        DeviceGattMap.getInstance().getGattForDevice(device).readCharacteristic(characteristic);
+
+        final BluetoothGatt gatt = DeviceGattMap.getInstance().getGattForDevice(device);
+
+        if (!gatt.readCharacteristic(characteristic)) {
+            Log.i(TAG, "Could not read characteristic. Skip");
+            task.onResponse(null, null);
+        }
+    }
+
+    private BluetoothGattDescriptor findNotificationDescriptor(BluetoothGattCharacteristic characteristic) {
+        UUID uuid = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb");
+        return characteristic.getDescriptor(uuid);
     }
 
     private void disconnectGatt(Intent intent) {
         Log.i(TAG, "disconnecting GATT");
         BluetoothDevice device = intent.getParcelableExtra(DEVICE);
         DeviceGattMap.getInstance().getGattForDevice(device).disconnect();
-    }
-
-    private ArrayList<BluetoothGattCharacteristic> prepareCharacteristicsList(BluetoothGatt gatt) {
-        ArrayList<BluetoothGattCharacteristic> characteristics = new ArrayList<>();
-
-        for (BluetoothGattService service : gatt.getServices()) {
-            for (BluetoothGattCharacteristic characteristic : service.getCharacteristics()) {
-                characteristics.add(characteristic);
-            }
-        }
-
-        return characteristics;
     }
 
     private void discoverServices(Intent intent) {
@@ -146,7 +182,8 @@ public class BLEService extends IntentService {
         STOP_SCAN,
         CONNECT_GATT,
         DISCONNECT,
-        READ_CHARACTERISTIC
+        READ_CHARACTERISTIC,
+        ENABLE_CHARACTERISTIC_NOTIFICATION
     }
 
     enum Response {
@@ -156,6 +193,7 @@ public class BLEService extends IntentService {
         CONNECTION_LOST,
         SERVICES_DISCOVERED,
         CHARACTERISTIC_READ,
-        CHARACTERISTIC_UPDATED
+        CHARACTERISTIC_UPDATED,
+        ENABLE_CHARACTERISTIC_NOTIFICATION
     }
 }

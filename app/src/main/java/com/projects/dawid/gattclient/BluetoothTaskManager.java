@@ -16,6 +16,7 @@ class BluetoothTaskManager {
     private TimerTask mExecuteTask = new TimerTask() {
         @Override
         public void run() {
+            Log.i(TAG, "Queue size: " + mTasksQueue.size());
             if (!checkRunTaskPrecoditions()) {
                 Log.i(TAG, "Preconditions not fulfilled to run next task");
                 return;
@@ -61,7 +62,7 @@ class BluetoothTaskManager {
 
     private boolean checkRunTaskPrecoditions() {
         if (isTaskPending()) {
-            Log.i(TAG, "Task is pending, cannot execute another one");
+            Log.i(TAG, "Task: " + mCurrentTask + "is pending, cannot execute another one");
             return false;
         }
 

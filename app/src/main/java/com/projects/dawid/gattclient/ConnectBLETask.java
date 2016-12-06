@@ -23,4 +23,9 @@ class ConnectBLETask extends BluetoothTask {
         connectGATTIntent.putExtra(BLEService.DEVICE, mDevice);
         mActivityContext.startService(connectGATTIntent);
     }
+
+    @Override
+    public String toString() {
+        return "ConnectBLETask";
+    }
 }
