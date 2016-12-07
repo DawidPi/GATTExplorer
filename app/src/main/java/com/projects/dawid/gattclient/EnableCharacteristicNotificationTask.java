@@ -29,6 +29,11 @@ class EnableCharacteristicNotificationTask extends BluetoothTask {
         mActivityContext.startService(enableNotificationIntent);
     }
 
+    @Override
+    public String toString() {
+        return "Enable Notification";
+    }
+
     BluetoothGattCharacteristic getCharacteristic() {
         return mCharacteristic;
     }

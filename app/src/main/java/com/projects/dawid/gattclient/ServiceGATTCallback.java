@@ -47,7 +47,15 @@ class ServiceGATTCallback extends BluetoothGattCallback {
         connectionLostIntent.setAction(BLEService.RESPONSE);
         connectionLostIntent.putExtra(BLEService.RESPONSE, BLEService.Response.CONNECTION_LOST);
         connectionLostIntent.putExtra(BLEService.DEVICE, device);
-        BluetoothTaskManager.getInstance().getCurrentTask().onResponse(mServiceContext, connectionLostIntent);
+
+        final BluetoothTask currentTask = BluetoothTaskManager.getInstance().getCurrentTask();
+
+        if (currentTask instanceof DisconnectTask) {
+            currentTask.onResponse(mServiceContext, connectionLostIntent);
+        } else {
+            LocalBroadcastManager.getInstance(mServiceContext).sendBroadcast(connectionLostIntent);
+        }
+
     }
 
     private void notifyConnectionSuccessful(BluetoothDevice device) {
@@ -81,7 +89,7 @@ class ServiceGATTCallback extends BluetoothGattCallback {
         characteristicReadIntent.setAction(BLEService.RESPONSE);
         characteristicReadIntent.putExtra(BLEService.RESPONSE, BLEService.Response.CHARACTERISTIC_READ);
         SingleCharacteristicStaticContainer.getInstance().pushCharacteristic(characteristic);
-        BluetoothTaskManager.getInstance().getCurrentTask().onResponse(mServiceContext, characteristicReadIntent);
+        LocalBroadcastManager.getInstance(mServiceContext).sendBroadcast(characteristicReadIntent);
     }
 
     @Override

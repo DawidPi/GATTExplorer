@@ -1,5 +1,6 @@
 package com.projects.dawid.gattclient;
 
+import android.app.Activity;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGattService;
 import android.content.BroadcastReceiver;
@@ -19,9 +20,9 @@ public class DiscoveredDevicesBroadcastReceiver extends BroadcastReceiver {
     private static String TAG = "DiscoveredReceiver";
     private HashMap<String, BluetoothDevice> mBluetoothDevices = new HashMap<>();
     private ConnectedArrayAdapter mBluetoothDevicesAdapter;
-    private Context mActivityContext;
+    private Activity mActivityContext;
 
-    public DiscoveredDevicesBroadcastReceiver(Context context, ConnectedArrayAdapter devicesAdapter) {
+    public DiscoveredDevicesBroadcastReceiver(Activity context, ConnectedArrayAdapter devicesAdapter) {
         mBluetoothDevicesAdapter = devicesAdapter;
         mActivityContext = context;
     }
@@ -64,7 +65,11 @@ public class DiscoveredDevicesBroadcastReceiver extends BroadcastReceiver {
                 break;
 
             default:
-                Log.d(TAG, "Response type unknown");
+
+                final BluetoothTask currentTask = BluetoothTaskManager.getInstance().getCurrentTask();
+                if (currentTask != null)
+                    currentTask.onResponse(null, null);
+                Log.d(TAG, "Response type unknown" + responseType);
         }
 
     }
@@ -78,12 +83,19 @@ public class DiscoveredDevicesBroadcastReceiver extends BroadcastReceiver {
         Intent serviceShowIntent = new Intent(mActivityContext, ServiceShowActivity.class);
         serviceShowIntent.putExtra(ServiceShowActivity.DEVICE, device);
         ServiceShowActivity.setServicesList(services);
+        try {
+            mActivityContext.unregisterReceiver(this);
+        } catch (Exception e) {
+            Log.i(TAG, "unregister receiver exception");
+        }
+        mActivityContext.finish();
         mActivityContext.startActivity(serviceShowIntent);
     }
 
     private void notifyOnConnectionLost(Intent intent) {
         BluetoothDevice device = intent.getParcelableExtra(BLEService.DEVICE);
             if (device != null) {
+                BluetoothTaskManager.getInstance().clear();
                 mBluetoothDevices.remove(device.getName());
                 mBluetoothDevicesAdapter.remove(new BluetoothDeviceAdapter(device));
                 mBluetoothDevicesAdapter.getConnectedDevices().remove(new BluetoothDeviceAdapter(device));

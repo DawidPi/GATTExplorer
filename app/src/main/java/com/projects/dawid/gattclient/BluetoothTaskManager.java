@@ -92,4 +92,19 @@ class BluetoothTaskManager {
     BluetoothTask getCurrentTask() {
         return mCurrentTask;
     }
+
+    boolean isTaskTypeInQueue(Class type) {
+
+        for (BluetoothTask task : mTasksQueue) {
+            if (type.isInstance(task))
+                return true;
+        }
+
+        return false;
+    }
+
+    void clear() {
+        mTasksQueue.clear();
+        mCurrentTask = null;
+    }
 }

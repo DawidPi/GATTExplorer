@@ -3,6 +3,7 @@ package com.projects.dawid.gattclient;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattService;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -35,6 +36,8 @@ public class ServiceShowActivity extends AppCompatActivity {
     private BluetoothDevice mBluetoothDevice;
     private SimpleExpandableListAdapter mExpandableListAdapter;
     private ServiceShowBroadcastReceiver mBroadcastReceiver;
+    private CharacteristicsRefresherManager mCharacteristicsRefresher =
+            new CharacteristicsRefresherManager(this, 2000);
 
     /**
      * Sets services lists as services, that should be displayed
@@ -65,8 +68,14 @@ public class ServiceShowActivity extends AppCompatActivity {
             Log.i(TAG, "service: " + service.getUuid());
         }
 
+        BluetoothTaskManager.getInstance().clear();
         updateCharacteristicsValues();
         fillServicesView();
+        startConstantlyRefreshingCharacteristics();
+    }
+
+    private void startConstantlyRefreshingCharacteristics() {
+        mCharacteristicsRefresher.startRefreshing(mBluetoothDevice);
     }
 
     private void setBroadcastReceiver() {
@@ -147,23 +156,20 @@ public class ServiceShowActivity extends AppCompatActivity {
     }
 
     @Override
-    protected void onPause() {
-        Log.i(TAG, "Activity paused!");
-        updateCharacteristicsValues();
-        fillServicesView();
-        super.onPause();
-    }
-
-    @Override
-    protected void onResume() {
-
-        super.onResume();
-    }
-
-    @Override
     public void onBackPressed() {
         Log.i(TAG, "Back Pressed");
-        super.onBackPressed();
+        mCharacteristicsRefresher.stopRefreshing();
+        BluetoothTaskManager.getInstance().clear();
+
+        Intent deviceDiscoveryIntent = new Intent(this, DiscoveredDevicesActivity.class);
+        finish();
+        try {
+            unregisterReceiver(mBroadcastReceiver);
+        } catch (Exception e) {
+            Log.i(TAG, "Unregister exception catched!");
+        }
+        startActivity(deviceDiscoveryIntent);
+        //super.onBackPressed();
     }
 
     @Override
@@ -209,5 +215,13 @@ public class ServiceShowActivity extends AppCompatActivity {
             }
         }
         return serviceToSwap;
+    }
+
+    public BluetoothDevice getDevice() {
+        return mBluetoothDevice;
+    }
+
+    public void stopRefresher() {
+        mCharacteristicsRefresher.stopRefreshing();
     }
 }

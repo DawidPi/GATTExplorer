@@ -124,6 +124,12 @@ public class DiscoveredDevicesActivity extends AppCompatActivity {
         return false;
     }
 
+    @Override
+    protected void onResume() {
+        BluetoothTaskManager.getInstance().clear();
+        super.onResume();
+    }
+
     private void clearLocalDevices() {
         mBLEDevices.clear();
         mBluetoothListAdapter.clear();

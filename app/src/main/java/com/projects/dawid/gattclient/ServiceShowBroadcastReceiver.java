@@ -1,5 +1,6 @@
 package com.projects.dawid.gattclient;
 
+import android.bluetooth.BluetoothDevice;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -27,6 +28,7 @@ public class ServiceShowBroadcastReceiver extends BroadcastReceiver {
         }
 
         String action = intent.getAction();
+
         if (!action.equals(BLEService.RESPONSE)) {
             Log.e(TAG, "Wrong intent action");
             return;
@@ -37,9 +39,29 @@ public class ServiceShowBroadcastReceiver extends BroadcastReceiver {
         switch (responseType) {
             case CHARACTERISTIC_READ:
                 updateSingleCharacteristic(intent);
+                break;
             case CHARACTERISTIC_UPDATED:
                 updateSingleCharacteristic(intent);
+                break;
+            case CONNECTION_LOST:
+                handleLostConnection(intent);
+                break;
 
+            default:
+                Log.i(TAG, "Task not supported: " + responseType);
+
+        }
+    }
+
+    private void handleLostConnection(Intent intent) {
+        Log.i(TAG, "Connection lost");
+        BluetoothDevice disconnectedDevice = intent.getParcelableExtra(BLEService.DEVICE);
+        BluetoothTaskManager.getInstance().clear();
+        if (disconnectedDevice.equals(mActivity.getDevice())) {
+            Log.i(TAG, "Disconnection of currently viewed device");
+            mActivity.stopRefresher();
+            BluetoothTaskManager.getInstance().clear();
+            mActivity.onBackPressed();
         }
     }
 
