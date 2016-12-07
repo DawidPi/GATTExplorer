@@ -15,7 +15,7 @@ import java.util.Collection;
  * Created by Dawid on 06.12.2016.
  */
 
-public class SetAllNotificationsTask extends BluetoothTask {
+public class SetAllNotificationsTask implements Runnable {
 
     private final Context mActivityContext;
     private final BluetoothDevice mDevice;
@@ -32,12 +32,10 @@ public class SetAllNotificationsTask extends BluetoothTask {
 
         if (characteristics == null) {
             Log.e(TAG, "Could not prepare characteristics. Aborting");
-            onResponse(null, null);
             return;
         }
 
         appendSubtasks(characteristics);
-        onResponse(null, null);
     }
 
     private void appendSubtasks(Collection<BluetoothGattCharacteristic> characteristics) {
@@ -70,15 +68,5 @@ public class SetAllNotificationsTask extends BluetoothTask {
         }
 
         return characteristics;
-    }
-
-    @Override
-    void onResponse(Context context, Intent responseIntent) {
-        //empty not to be used by BluetoothTaskManager
-    }
-
-    @Override
-    public String toString() {
-        return "SetAllNotificationsTask";
     }
 }

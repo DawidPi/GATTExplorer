@@ -13,7 +13,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
-public class ReadAllCharacteristicsTask extends BluetoothTask {
+public class ReadAllCharacteristicsTask implements Runnable {
 
     private final Context mActivityContext;
     private final BluetoothDevice mDevice;
@@ -30,12 +30,10 @@ public class ReadAllCharacteristicsTask extends BluetoothTask {
 
         if (characteristics == null) {
             Log.e(TAG, "Could not prepare characteristics. Aborting");
-            onResponse(null, null);
             return;
         }
 
         appendAllCharacteristics(characteristics);
-        onResponse(null, null);
     }
 
     private void appendAllCharacteristics(Collection<BluetoothGattCharacteristic> characteristics) {
@@ -69,15 +67,5 @@ public class ReadAllCharacteristicsTask extends BluetoothTask {
         }
 
         return characteristics;
-    }
-
-    @Override
-    void onResponse(Context context, Intent responseIntent) {
-        //empty not to be used by BluetoothTaskManager
-    }
-
-    @Override
-    public String toString() {
-        return "ReadAllCharacteristicsTask";
     }
 }

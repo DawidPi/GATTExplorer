@@ -56,16 +56,19 @@ abstract class BLEServiceStarter {
 
     static void readAllCharacteristics(Context context, BluetoothDevice device) {
         setAllCharacteristicsNotifications(context, device);
-        BluetoothTask readAllCharacteristics = new ReadAllCharacteristicsTask(context, device);
+        Runnable readAllCharacteristics = new ReadAllCharacteristicsTask(context, device);
         readAllCharacteristics.run();
     }
 
     private static void setAllCharacteristicsNotifications(Context context, BluetoothDevice device) {
-        BluetoothTask allNotificationsOnTask = new SetAllNotificationsTask(context, device);
+        Runnable allNotificationsOnTask = new SetAllNotificationsTask(context, device);
         allNotificationsOnTask.run();
     }
 
     static void disconnectDevice(Context context, BluetoothDevice device) {
         BluetoothTask disconnectDevice = new DisconnectTask(context, device);
+        BluetoothTaskManager taskManager = BluetoothTaskManager.getInstance();
+        taskManager.append(disconnectDevice);
+        taskManager.tryExecute();
     }
 }
