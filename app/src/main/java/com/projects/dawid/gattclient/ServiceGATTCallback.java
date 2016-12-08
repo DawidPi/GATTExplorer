@@ -63,7 +63,9 @@ class ServiceGATTCallback extends BluetoothGattCallback {
         connectionSuccessfulIntent.setAction(BLEService.RESPONSE);
         connectionSuccessfulIntent.putExtra(BLEService.RESPONSE, BLEService.Response.CONNECTION_SUCCESSFUL);
         connectionSuccessfulIntent.putExtra(BLEService.DEVICE, device);
-        BluetoothTaskManager.getInstance().getCurrentTask().onResponse(mServiceContext, connectionSuccessfulIntent);
+        final BluetoothTask currentTask = BluetoothTaskManager.getInstance().getCurrentTask();
+        if (currentTask != null)
+            currentTask.onResponse(mServiceContext, connectionSuccessfulIntent);
     }
 
     @Override
@@ -89,7 +91,7 @@ class ServiceGATTCallback extends BluetoothGattCallback {
         characteristicReadIntent.setAction(BLEService.RESPONSE);
         characteristicReadIntent.putExtra(BLEService.RESPONSE, BLEService.Response.CHARACTERISTIC_READ);
         SingleCharacteristicStaticContainer.getInstance().pushCharacteristic(characteristic);
-        LocalBroadcastManager.getInstance(mServiceContext).sendBroadcast(characteristicReadIntent);
+        BluetoothTaskManager.getInstance().getCurrentTask().onResponse(mServiceContext, characteristicReadIntent);
     }
 
     @Override

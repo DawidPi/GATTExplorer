@@ -13,17 +13,19 @@ class BluetoothTaskManager {
     private static BluetoothTaskManager mSingleton = null;
     private Queue<BluetoothTask> mTasksQueue = new ArrayDeque<>();
     private BluetoothTask mCurrentTask = null;
+    private int mFailedAttempts = 0;
     private TimerTask mExecuteTask = new TimerTask() {
         @Override
         public void run() {
             Log.i(TAG, "Queue size: " + mTasksQueue.size());
             if (!checkRunTaskPrecoditions()) {
                 Log.i(TAG, "Preconditions not fulfilled to run next task");
+                selfRecovery();
                 return;
             }
 
-            Log.i(TAG, "Starting next task");
             BluetoothTask task = mTasksQueue.poll();
+            Log.i(TAG, "Starting next task " + task);
             mCurrentTask = task;
             task.run();
         }
@@ -39,6 +41,14 @@ class BluetoothTaskManager {
             mSingleton = new BluetoothTaskManager();
 
         return mSingleton;
+    }
+
+    private void selfRecovery() {
+        mFailedAttempts++;
+        if (mFailedAttempts > 4) {
+            clear();
+            mFailedAttempts = 0;
+        }
     }
 
     void append(BluetoothTask task) {
@@ -79,12 +89,9 @@ class BluetoothTaskManager {
         return true;
     }
 
-    void taskFinished(BluetoothTask task) {
-        if (mCurrentTask != task) {
-            Log.d(TAG, "Tasks differ");
-            return;
-        }
-
+    void taskFinished() {
+        Log.i(TAG, "Task " + mCurrentTask + "finished. Queue size" + mTasksQueue.size());
+        mFailedAttempts = 0;
         mCurrentTask = null;
         mExecuteTask.run();
     }

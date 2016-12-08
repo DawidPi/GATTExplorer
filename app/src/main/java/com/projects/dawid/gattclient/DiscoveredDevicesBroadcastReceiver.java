@@ -81,14 +81,9 @@ public class DiscoveredDevicesBroadcastReceiver extends BroadcastReceiver {
         List<BluetoothGattService> services = CharacteristicsStaticContainer.getInstance().pullCharacteristics();
 
         Intent serviceShowIntent = new Intent(mActivityContext, ServiceShowActivity.class);
+        serviceShowIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         serviceShowIntent.putExtra(ServiceShowActivity.DEVICE, device);
         ServiceShowActivity.setServicesList(services);
-        try {
-            mActivityContext.unregisterReceiver(this);
-        } catch (Exception e) {
-            Log.i(TAG, "unregister receiver exception");
-        }
-        mActivityContext.finish();
         mActivityContext.startActivity(serviceShowIntent);
     }
 

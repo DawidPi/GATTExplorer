@@ -59,7 +59,6 @@ public class ServiceShowBroadcastReceiver extends BroadcastReceiver {
         BluetoothTaskManager.getInstance().clear();
         if (disconnectedDevice.equals(mActivity.getDevice())) {
             Log.i(TAG, "Disconnection of currently viewed device");
-            mActivity.stopRefresher();
             BluetoothTaskManager.getInstance().clear();
             mActivity.onBackPressed();
         }

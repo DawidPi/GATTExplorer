@@ -8,6 +8,7 @@ import android.os.Bundle;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.ListView;
@@ -21,6 +22,7 @@ import java.util.ArrayList;
 public class DiscoveredDevicesActivity extends AppCompatActivity {
 
     private final static int BLE_ENABLED = 1;
+    private static final String TAG = "DISCOVERED_ACTIVITY";
     private BluetoothAdapter mBluetoothAdapter;
     private ConnectedArrayAdapter mBluetoothListAdapter;
     private ArrayList<BluetoothDeviceAdapter> mBLEDevices = new ArrayList<>();
@@ -29,11 +31,6 @@ public class DiscoveredDevicesActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        prepareActivity();
-        initializeMembers();
-
-        restartDeviceScan();
     }
 
     private void initializeMembers() {
@@ -127,7 +124,19 @@ public class DiscoveredDevicesActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         BluetoothTaskManager.getInstance().clear();
+        prepareActivity();
+        initializeMembers();
+
+        restartDeviceScan();
         super.onResume();
+    }
+
+    @Override
+    protected void onPause() {
+        Log.i(TAG, "Can you just already die?");
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(mBroadcastReceiver);
+
+        super.onPause();
     }
 
     private void clearLocalDevices() {

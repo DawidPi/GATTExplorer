@@ -18,7 +18,8 @@
         android:theme="@style/Theme.AppCompat.Light.NoActionBar">
         <activity
             android:name=".DiscoveredDevicesActivity"
-            android:configChanges="orientation|screenSize">
+            android:configChanges="orientation|screenSize"
+            android:launchMode="singleInstance">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -37,7 +38,8 @@
 
         <activity
             android:name=".ServiceShowActivity"
-            android:label="@string/ServiceShowToolbar"></activity>
+            android:label="@string/ServiceShowToolbar"
+            android:launchMode="singleInstance"></activity>
     </application>
 
 </manifest>

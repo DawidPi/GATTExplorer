@@ -54,7 +54,10 @@ public class ServiceShowActivity extends AppCompatActivity {
         setContentView(R.layout.activity_service_show);
 
         setupActionBar();
+    }
 
+    @Override
+    protected void onResume() {
         Log.i(TAG, "onCreate!");
 
         mBluetoothDevice = getIntent().getParcelableExtra(DEVICE);
@@ -72,9 +75,11 @@ public class ServiceShowActivity extends AppCompatActivity {
         updateCharacteristicsValues();
         fillServicesView();
         startConstantlyRefreshingCharacteristics();
+        super.onResume();
     }
 
     private void startConstantlyRefreshingCharacteristics() {
+        mCharacteristicsRefresher = new CharacteristicsRefresherManager(this, 1000);
         mCharacteristicsRefresher.startRefreshing(mBluetoothDevice);
     }
 
@@ -158,18 +163,19 @@ public class ServiceShowActivity extends AppCompatActivity {
     @Override
     public void onBackPressed() {
         Log.i(TAG, "Back Pressed");
-        mCharacteristicsRefresher.stopRefreshing();
         BluetoothTaskManager.getInstance().clear();
 
         Intent deviceDiscoveryIntent = new Intent(this, DiscoveredDevicesActivity.class);
-        finish();
-        try {
-            unregisterReceiver(mBroadcastReceiver);
-        } catch (Exception e) {
-            Log.i(TAG, "Unregister exception catched!");
-        }
+        deviceDiscoveryIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         startActivity(deviceDiscoveryIntent);
-        //super.onBackPressed();
+    }
+
+    @Override
+    protected void onPause() {
+        mCharacteristicsRefresher.stopRefreshing();
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(mBroadcastReceiver);
+
+        super.onPause();
     }
 
     @Override
@@ -221,7 +227,4 @@ public class ServiceShowActivity extends AppCompatActivity {
         return mBluetoothDevice;
     }
 
-    public void stopRefresher() {
-        mCharacteristicsRefresher.stopRefreshing();
-    }
 }
