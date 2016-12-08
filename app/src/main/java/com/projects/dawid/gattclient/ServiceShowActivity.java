@@ -209,7 +209,7 @@ public class ServiceShowActivity extends AppCompatActivity {
     private BluetoothGattService findServiceToSwap(BluetoothGattCharacteristic newCharacteristic) {
         BluetoothGattService serviceToSwap = null;
         for (BluetoothGattService currentService : mServices) {
-            if (currentService == newCharacteristic.getService()) {
+            if (currentService.equals(newCharacteristic.getService())) {
                 Log.i(TAG, "Service found");
                 serviceToSwap = currentService;
             }
