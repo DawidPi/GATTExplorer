@@ -22,6 +22,10 @@ public class DiscoveredDevicesBroadcastReceiver extends BroadcastReceiver {
     private ConnectedArrayAdapter mBluetoothDevicesAdapter;
     private Activity mActivityContext;
 
+    public DiscoveredDevicesBroadcastReceiver() {
+        super();
+    }
+
     public DiscoveredDevicesBroadcastReceiver(Activity context, ConnectedArrayAdapter devicesAdapter) {
         mBluetoothDevicesAdapter = devicesAdapter;
         mActivityContext = context;
