@@ -44,8 +44,14 @@ class BluetoothTaskManager {
     }
 
     private void selfRecovery() {
+        if (mTasksQueue.isEmpty()) {
+            mFailedAttempts = 0;
+            return;
+        }
+
         mFailedAttempts++;
-        if (mFailedAttempts > 4) {
+        if (mFailedAttempts > 10) {
+            Log.e(TAG, "Queue stuck. Cleaning");
             clear();
             mFailedAttempts = 0;
         }

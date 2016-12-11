@@ -38,8 +38,7 @@
 
         <activity
             android:name=".ServiceShowActivity"
-            android:label="@string/ServiceShowToolbar"
-            android:launchMode="singleInstance"></activity>
+            android:label="@string/ServiceShowToolbar"></activity>
     </application>
 
 </manifest>

@@ -54,15 +54,17 @@ public class ServiceShowActivity extends AppCompatActivity {
         setContentView(R.layout.activity_service_show);
 
         setupActionBar();
-    }
 
-    @Override
-    protected void onResume() {
-        Log.i(TAG, "onCreate!");
+        Log.i(TAG, "On create!");
 
         mBluetoothDevice = getIntent().getParcelableExtra(DEVICE);
         if (mBluetoothDevice == null)
             Log.e(TAG, "Bluetooth device is null!");
+    }
+
+    @Override
+    protected void onResume() {
+        Log.i(TAG, "onResume!");
 
         setBroadcastReceiver();
 
@@ -168,6 +170,7 @@ public class ServiceShowActivity extends AppCompatActivity {
         Intent deviceDiscoveryIntent = new Intent(this, DiscoveredDevicesActivity.class);
         deviceDiscoveryIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         startActivity(deviceDiscoveryIntent);
+        finish();
     }
 
     @Override
@@ -206,7 +209,7 @@ public class ServiceShowActivity extends AppCompatActivity {
             int idx = mServices.indexOf(serviceToRemove);
             mServices.set(idx, newCharacteristic.getService());
         } else
-            mServices.add(newCharacteristic.getService());
+            Log.d(TAG, "Service not found");
 
         updateCharacteristicsView();
     }

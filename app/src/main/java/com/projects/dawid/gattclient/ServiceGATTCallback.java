@@ -64,8 +64,7 @@ class ServiceGATTCallback extends BluetoothGattCallback {
         connectionSuccessfulIntent.putExtra(BLEService.RESPONSE, BLEService.Response.CONNECTION_SUCCESSFUL);
         connectionSuccessfulIntent.putExtra(BLEService.DEVICE, device);
         final BluetoothTask currentTask = BluetoothTaskManager.getInstance().getCurrentTask();
-        if (currentTask != null)
-            currentTask.onResponse(mServiceContext, connectionSuccessfulIntent);
+        currentTask.onResponse(mServiceContext, connectionSuccessfulIntent);
     }
 
     @Override
