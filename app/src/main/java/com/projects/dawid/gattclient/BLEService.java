@@ -9,6 +9,7 @@ import android.bluetooth.BluetoothManager;
 import android.bluetooth.le.BluetoothLeScanner;
 import android.content.Context;
 import android.content.Intent;
+import android.os.Build;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
@@ -163,7 +164,12 @@ public class BLEService extends IntentService {
         BluetoothDevice device = intent.getParcelableExtra(DEVICE);
 
         //never set autoconnect on true, as it's known to cause errors on some android devices
-        device.connectGatt(this, false, getGATTCallback());
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            Log.i(TAG, "SDK >=23. connect GATT through LE!");
+            device.connectGatt(this, false, getGATTCallback(), BluetoothDevice.TRANSPORT_LE);
+        } else {
+            device.connectGatt(this, false, getGATTCallback());
+        }
     }
 
     private void stopLEScan() {
@@ -173,6 +179,7 @@ public class BLEService extends IntentService {
 
     private void startLEScan() {
         Log.i(TAG, "Starting LE scan");
+
         getBluetoothLeScanner().startScan(new ServiceLEScanCallback(this));
     }
 
